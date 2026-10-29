@@ -1,0 +1,50 @@
+# Harness execpolicy rules (defense in depth; the PreToolUse hook is the primary guard).
+# Verify with: codex execpolicy check --pretty --rules .codex/rules/harness.rules -- git push
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "forbidden",
+    justification = "대회 규정: git push 불가, 결과물 외부 전송 금지.",
+    match = ["git push", "git push origin main", "git push --force"],
+    not_match = ["git pull", "git status"],
+)
+
+prefix_rule(
+    pattern = [["scp", "sftp", "ssh", "nc", "ncat", "netcat", "socat", "telnet", "ftp"]],
+    decision = "forbidden",
+    justification = "대회 규정: 원격 접속·외부 전송 도구 금지.",
+    match = ["scp a.csv host:/tmp", "ssh user@host", "nc -l 9000"],
+    not_match = ["sshfs", "ls"],
+)
+
+prefix_rule(
+    pattern = ["git", ["reset", "clean", "rebase", "filter-branch"]],
+    decision = "prompt",
+    justification = "작업 손실·히스토리 재작성 위험(git log 평가 대상). 사람이 판단.",
+    match = ["git reset --hard HEAD~1", "git clean -fdx", "git rebase main"],
+    not_match = ["git restore --staged a.py", "git log"],
+)
+
+prefix_rule(
+    pattern = [["pkill", "killall"]],
+    decision = "prompt",
+    justification = "플랫폼·감독 프로세스 종료 방지. 본인 서버만 종료.",
+    match = ["pkill -f uvicorn", "killall node"],
+    not_match = ["kill 1234"],
+)
+
+prefix_rule(
+    pattern = ["git", ["status", "diff", "log", "show"]],
+    decision = "allow",
+    justification = "git 읽기 명령은 승인 없이 실행.",
+    match = ["git status", "git diff --stat", "git log --oneline -5"],
+    not_match = ["git push", "git commit -m x"],
+)
+
+prefix_rule(
+    pattern = [["pytest", "python3"], ["-q", "-m"], ["pytest", "tests"]],
+    decision = "allow",
+    justification = "테스트 실행은 승인 없이 (검증 비용을 낮춰 기술 부채 방지).",
+    match = ["python3 -m pytest -q", "pytest -q tests"],
+    not_match = ["python3 app.py", "python3 -m pip install x"],
+)

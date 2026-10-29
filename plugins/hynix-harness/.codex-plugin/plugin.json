@@ -1,0 +1,18 @@
+{
+  "name": "hynix-harness",
+  "version": "0.1.0",
+  "description": "180-minute data/AI problem-solving harness: intent capture, parallel research, verification gates, document writing/review, and cognition checks for Codex.",
+  "author": {
+    "name": "Jake Kim"
+  },
+  "homepage": "https://github.com/JakeKim4926/SageHynix",
+  "keywords": ["harness", "hackathon", "data", "verification", "documentation", "research"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Hynix Harness",
+    "shortDescription": "Intent, verification, docs and cognition skills for timed AI missions",
+    "developerName": "Jake Kim",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"]
+  }
+}
