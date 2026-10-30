@@ -1,6 +1,6 @@
 ---
 name: fe-design
-description: React/TypeScript(Vite) 앱 화면의 색상·글꼴·간격·화면 골격·차트 색을 SK 그룹 CI(SK Red·SK Orange) 기반 디자인 토큰으로 통일한다. 새 화면의 첫 스타일을 잡을 때, 화면 색·레이아웃을 정리하거나 SK 톤으로 바꿀 때, 차트 계열 색·상태 색을 정할 때 사용한다. 환경 준비는 fe-setup, 기능 구현(차트의 데이터·축·단위 포함)은 fe-build를 사용한다. Streamlit 앱에는 쓰지 않는다.
+description: React/TypeScript(Vite) 앱 화면의 색상·글꼴·간격·화면 골격·차트 색을 SK하이닉스 공식 CI(SK Red·SK Orange와 보조색) 기반 디자인 토큰으로 통일한다. 새 화면의 첫 스타일을 잡을 때, 화면 색·레이아웃을 정리하거나 SK 톤으로 바꿀 때, 차트 계열 색·상태 색을 정할 때 사용한다. 환경 준비는 fe-setup, 기능 구현(차트의 데이터·축·단위 포함)은 fe-build를 사용한다. Streamlit 앱에는 쓰지 않는다.
 ---
 
 # FE Design
