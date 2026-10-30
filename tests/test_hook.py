@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
@@ -121,27 +120,16 @@ class PreToolPatch(Base):
                 self.assertIsNone(self.patch(p))
 
 
-class PromptAndSession(Base):
+class Prompt(Base):
     def test_astra_blocked(self):
         out = run_hook("prompt", {"model": "gpt-6-astra", "prompt": "hi", "cwd": str(self.ws)}, self.home)
         self.assertEqual(out["decision"], "block")
 
-    def test_clock_context(self):
-        (self.home / "clock.json").write_text(json.dumps({"start": time.time() - 25 * 60, "minutes": 180}))
-        out = run_hook("prompt", {"model": "gpt-6.1-sol", "prompt": "hi", "cwd": str(self.ws)}, self.home)
-        ctx = out["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("경과 25분", ctx)
-        self.assertIn("Research", ctx)
-        self.assertTrue((self.ws / ".harness" / "log" / "prompts.jsonl").exists())
-
-    def test_clock_final_phase(self):
-        (self.home / "clock.json").write_text(json.dumps({"start": time.time() - 175 * 60, "minutes": 180}))
-        out = run_hook("prompt", {"model": "gpt-6.1-sol", "prompt": "x", "cwd": str(self.ws)}, self.home)
-        self.assertIn("Submit", out["hookSpecificOutput"]["additionalContext"])
-
-    def test_session_start_without_clock(self):
-        out = run_hook("session-start", {"source": "startup", "model": "gpt-6.1-sol", "cwd": str(self.ws)}, self.home)
-        self.assertIn("타이머 미시작", out["hookSpecificOutput"]["additionalContext"])
+    def test_prompt_logged_without_context_injection(self):
+        out = run_hook("prompt", {"model": "gpt-6.1-sol", "prompt": "데이터 요약해줘", "cwd": str(self.ws)}, self.home)
+        self.assertIsNone(out)
+        log = self.ws / ".harness" / "log" / "prompts.jsonl"
+        self.assertIn("데이터 요약해줘", log.read_text(encoding="utf-8"))
 
     def test_garbage_input_fails_open(self):
         env = {**os.environ, "HYNIX_HARNESS_HOME": str(self.home)}

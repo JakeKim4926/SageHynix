@@ -41,8 +41,8 @@ else
   cp "$HARNESS/template/AGENTS.md" "$WS/AGENTS.md"; copied+=("AGENTS.md")
 fi
 
-# 2) Codex project layer, harness scripts, doc skeleton.
-for d in .codex .harness docs ctx; do copy_tree "$HARNESS/template/$d" "$WS/$d"; done
+# 2) Codex project layer, harness scripts, doc skeleton, copyable prompt scripts.
+for d in .codex .harness docs prompts; do copy_tree "$HARNESS/template/$d" "$WS/$d"; done
 
 # 3) Skills (single source: plugins/hynix-harness/skills) -> repo-scoped skills.
 copy_tree "$HARNESS/plugins/hynix-harness/skills" "$WS/.agents/skills"
@@ -53,28 +53,20 @@ chmod +x "$WS"/.harness/bin/*.sh "$WS"/.harness/bin/*.py "$WS"/.codex/hooks/*.py
 touch "$WS/.gitignore"
 grep -qxF '.harness/log/' "$WS/.gitignore" || printf '\n# harness runtime logs\n.harness/log/\n__pycache__/\n' >> "$WS/.gitignore"
 
-# 4b) ctx/ work memory: INDEX.md is regenerated from index.jsonl, and the append-only
-#     event log merges as a union so worktree lanes never conflict on it.
-grep -qxF 'ctx/INDEX.md' "$WS/.gitignore" || printf 'ctx/INDEX.md\nctx/.INDEX.*.tmp\n' >> "$WS/.gitignore"
-touch "$WS/.gitattributes"
-grep -qxF 'ctx/index.jsonl merge=union' "$WS/.gitattributes" || printf 'ctx/index.jsonl merge=union\n' >> "$WS/.gitattributes"
-PY="$(command -v python3 || command -v python)"
-CTX_ROOT="$WS" "$PY" "$WS/.harness/bin/ctx.py" init >/dev/null
-
-# 5) Shared state for hooks/clock across terminals and worktrees.
+# 5) Shared state so hooks find the workspace from any terminal.
 mkdir -p "$STATE"; printf '%s\n' "$WS" > "$STATE/workspace"
 
-# 6) Git: worktree lanes need the harness committed.
+# 6) Git: commit the harness so tool settings are part of the record.
 cd "$WS"
 if [[ ! -e .git ]]; then git init -q; say "git init (작업 공간이 저장소가 아니었음)"; fi
 if (( COMMIT )); then
   idargs=()
   git config user.name  >/dev/null || idargs+=(-c "user.name=candidate")
   git config user.email >/dev/null || idargs+=(-c "user.email=candidate@localhost")
-  paths=(); for p in AGENTS.md AGENTS.harness.md .gitignore .gitattributes .codex .harness .agents docs ctx; do [[ -e "$p" ]] && paths+=("$p"); done
+  paths=(); for p in AGENTS.md AGENTS.harness.md .gitignore .codex .harness .agents docs prompts; do [[ -e "$p" ]] && paths+=("$p"); done
   git add -- "${paths[@]}"
   if ! git diff --cached --quiet; then
-    git ${idargs[@]+"${idargs[@]}"} commit -q -m "chore(harness): install hynix harness (AGENTS.md, skills, subagents, hooks, rules, ctx)"
+    git ${idargs[@]+"${idargs[@]}"} commit -q -m "chore(harness): install hynix harness (AGENTS.md, 3 skills, SCRIPT, subagents, guard hooks)"
     say "커밋: $(git log --oneline -1)"
   fi
 fi
@@ -86,7 +78,6 @@ echo
 cat <<EOF
 
 다음 단계
-  1. 과제 시작 직후:  .harness/bin/clock.sh start
-  2. codex 실행 → 폴더 신뢰 승인 → /hooks 에서 하네스 훅 신뢰 → /model 로 Astra 아닌 모델 확인
-  3. 첫 요청:  \$task-intake README를 읽고 요구사항 원장을 만들어줘
+  1. codex 실행 → 폴더 신뢰 승인 → /hooks 에서 하네스 훅 신뢰 → /model 로 Astra 아닌 모델 확인
+  2. 첫 요청:  prompts/SCRIPT.md 의 S1(과제 파악)을 복사해 <…>만 채워서 보낸다
 EOF
