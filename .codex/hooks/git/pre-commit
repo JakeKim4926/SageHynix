@@ -1,0 +1,4 @@
+#!/bin/sh
+# 의도 추적 검사 (core.hooksPath=.codex/hooks/git). --no-verify 우회 금지.
+PY=python3; command -v python3 >/dev/null 2>&1 || PY=python
+exec "$PY" "$(git rev-parse --show-toplevel)/.codex/hooks/intent_trace.py" pre-commit
