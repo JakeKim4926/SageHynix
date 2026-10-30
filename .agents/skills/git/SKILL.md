@@ -31,7 +31,9 @@ git status                          # 깨끗한지 확인. 남은 변경이 있�
 git switch main
 git switch -c feature/<r-n>-<이름>
 ```
-작업 폴더가 git 저장소가 아니면(`git rev-parse --is-inside-work-tree` 실패) `git init -b main` 후 과제 원본 파일로 첫 커밋(`chore: 과제 원본 반입`)을 만든 뒤 시작한다.
+작업 폴더가 git 저장소가 아니면(`git rev-parse --is-inside-work-tree` 실패) `git init -b main`과 `git config core.hooksPath .codex/hooks/git` 후 과제 원본 파일로 첫 커밋(`chore: 과제 원본 반입`)을 만든 뒤 시작한다. 이미 저장소면 세션 시작 훅이 hooksPath를 설정한다.
+
+커밋 때 `.codex/hooks/git`이 의도 추적을 검사한다(`$intent`). `[trace check]`는 메시지대로 고쳐 다시 커밋하고, `[harness guard]`는 멈추고 사용자에게 보고한다.
 
 ## 커밋
 
@@ -104,3 +106,4 @@ git branch -d <브랜치>
 - `main`에 직접 커밋, 작업 브랜치 위에 브랜치 쌓기
 - `git reset --hard`·`rebase`·`commit --amend`로 커밋된 히스토리 고치기 — 고칠 것은 새 커밋으로
 - squash·fast-forward 머지, `git branch -D`
+- `--no-verify`·`commit -n`, `core.hooksPath` 변경·해제 (커밋 훅 우회)
