@@ -1,6 +1,6 @@
 # SageHynix — 해커톤용 Codex 하네스
 
-데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 4개(검증 + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
+데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 5개(검증 + git + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
 
 ## 빠른 시작
 
@@ -22,7 +22,7 @@ cp -rn /tmp/h/AGENTS.md /tmp/h/.agents /tmp/h/.codex /tmp/h/prompts .
 
 ```text
 AGENTS.md          Codex 작업 규칙
-.agents/skills/     verify, fe-setup, fe-build, fe-design
+.agents/skills/     verify, git, fe-setup, fe-build, fe-design
 .codex/            프로젝트 설정, 에이전트(researcher, verifier), 가드레일 훅, 규칙
 prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 ```
@@ -31,9 +31,9 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 
 ## 과제 시작
 
-1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 4개가 보이는지, 허용 모델인지 확인한다.
+1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 5개가 보이는지, 허용 모델인지 확인한다.
 2. `prompts/SCRIPT.md`의 빈 틀을 복사해 **실제 과제 지시서 경로**를 채우고 과제를 파악한다.
-3. 구현 → `$verify` → 커밋을 기능마다 반복한다.
+3. 기능마다 `main`에서 작업 브랜치를 만들고, 구현 → `$verify` → 커밋을 반복한 뒤 로컬에서 `main`으로 머지한다(`$git`, push·PR 없음).
 
 | 쓰는 곳 | 형식 |
 |---|---|
