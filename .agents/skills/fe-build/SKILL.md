@@ -11,6 +11,6 @@ description: React/TypeScript(Vite) 앱의 대시보드·페이지·컴포넌트
 2. 코드 작성 전에 [coding-rules.md](references/coding-rules.md)를 읽는다. 같은 작업에서 이미 읽고 변경되지 않았다면 재독하지 않는다. 기존 프로젝트 규칙을 우선한다. 신규 앱의 첫 컴포넌트를 만들 때, 컴포넌트를 나누거나 상태 위치를 정할 때는 [code-design.md](references/code-design.md) 예시를 본다.
 3. 비동기 조회·입력 화면이면 [ui-states.md](references/ui-states.md), API·수치·차트를 다루면 [data-contract.md](references/data-contract.md)를 구현 전에 읽는다. 차트 계열 색은 fe-design의 [sk-tokens.md 차트 절](../fe-design/references/sk-tokens.md)을 따른다.
 4. 실제 입력 → 계산/API → 화면의 가장 작은 동작 단위로 구현한다. 새 라이브러리·범용 엔진·추상화는 현재 요구사항에 필요할 때만 추가한다. 임시 데이터는 표시하고 실제 데이터 연결 여부를 구분한다.
-5. 변경한 동작을 확인하고 완료 판정은 기존 verify의 [FE 절차](../verify/references/frontend.md)를 따른다. 타입·빌드·화면 검증의 결과를 구분한다. 별도 검증 Skill이나 중복 기록을 만들지 않는다.
+5. 변경한 동작을 확인하고 완료 판정은 [verify](../verify/SKILL.md) 절차를 따른다. FE 검사는 그 안에서 [frontend.md](../verify/references/frontend.md)로 합친다. 타입·빌드·화면 검증의 결과를 구분한다. 별도 검증 Skill이나 중복 기록을 만들지 않는다.
 
 FE 변경 요약은 사용자 동작의 변화·검증 결과·남은 한계로 보고한다. 커밋·인지 점검은 상위 작업 흐름에서 한 번만 수행하며 하네스 유지보수에는 제출·퀴즈 루프를 적용하지 않는다.
