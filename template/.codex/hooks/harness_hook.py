@@ -2,10 +2,10 @@
 """Codex hook entrypoint for the hackathon harness.
 
 Usage (from .codex/hooks.json):
-    harness_hook.py prompt          # UserPromptSubmit: log prompt, block Astra models
+    harness_hook.py session-start   # SessionStart: inject clock + handoff reminder + ctx/ list
+    harness_hook.py prompt          # UserPromptSubmit: model guard + clock + related ctx/ entries, log prompt
     harness_hook.py pretool         # PreToolUse: block outbound / destructive / self-edit
 
-Neither mode adds text to the model's context unless it blocks something.
 Reads one JSON object on stdin. Standard library only.
 Fails open (exit 0, no output) on internal errors so a broken hook never wedges a session,
 except that PreToolUse denials are always explicit JSON.
@@ -18,7 +18,17 @@ import time
 from pathlib import Path
 
 STATE_DIR = Path(os.environ.get("HYNIX_HARNESS_HOME", Path.home() / ".hynix-harness"))
+CLOCK_FILE = STATE_DIR / "clock.json"
 WORKSPACE_FILE = STATE_DIR / "workspace"
+
+PHASES = [
+    (20, "Intake — README 정독, 업무 담당자 질의, docs/INTENT.md ($capture-requirements)"),
+    (35, "Research+Plan — 병렬 조사, docs/PLAN.md ($research-in-parallel, $plan-implementation)"),
+    (130, "Build — 슬라이스 구현→$verify-before-done→커밋→$rehearse-explanation"),
+    (155, "Harden+Docs — 검증 보강, 제출 문서 ($write-submission-docs)"),
+    (170, "Defense — $rehearse-explanation 제출 모드, $write-submission-docs 감사, 저장 상태 확인"),
+    (10**9, "Submit — 지금 제출을 시작할 것 (새 기능 금지)"),
+]
 
 LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "[::1]", "::1")
 
@@ -38,7 +48,7 @@ def workspace_root(cwd: str) -> Path:
 
 
 def log_event(cwd: str, name: str, record: dict) -> None:
-    if os.environ.get("HYNIX_HARNESS_NOLOG"):  # self-tests from doctor.sh
+    if os.environ.get("HYNIX_HARNESS_NOLOG"):  # self-tests from doctor.sh / clock.sh
         return
     try:
         log_dir = workspace_root(cwd) / ".harness" / "log"
@@ -48,6 +58,91 @@ def log_event(cwd: str, name: str, record: dict) -> None:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except OSError:
         pass
+
+
+def clock_line() -> str:
+    if not CLOCK_FILE.exists():
+        return "[harness] 타이머 미시작 — 과제 시작 직후 `.harness/bin/clock.sh start` 실행 권장."
+    try:
+        data = json.loads(CLOCK_FILE.read_text(encoding="utf-8"))
+        total = int(data.get("minutes", 180))
+        elapsed = int((time.time() - float(data["start"])) // 60)
+    except (ValueError, KeyError, OSError):
+        return "[harness] 타이머 파일 손상 — `.harness/bin/clock.sh start -f`로 재설정."
+    remaining = total - elapsed
+    # Phase boundaries are defined for 180 minutes; scale them to the configured total.
+    scale = total / 180
+    phase = next(label for limit, label in PHASES if elapsed < limit * scale)
+    warn = ""
+    if remaining <= 10:
+        warn = " ⚠ 종료 10분 이내: 제출 절차 시작."
+    elif remaining <= 30:
+        warn = " ⚠ 30분 이내: 새 기능 중단, 검증·문서·defense 준비."
+    return f"[harness] 경과 {elapsed}분 / 남은 {remaining}분 · 현재 단계: {phase}.{warn}"
+
+
+# ---------------------------------------------------------------- ctx/ work memory
+# Reads ctx/index.jsonl directly (no import of ctx.py, no file hashing) so the hook stays fast
+# and self-contained. Statuses shown here are as recorded; `ctx.py get` checks freshness.
+
+CTX_TOKEN = re.compile(r"[0-9a-z가-힣_]{2,}")
+
+
+def ctx_entries(cwd: str) -> dict:
+    entries = {}
+    try:
+        lines = (workspace_root(cwd) / "ctx" / "index.jsonl").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return entries
+    for line in lines:
+        try:
+            ev = json.loads(line)
+            entries.setdefault(ev["id"], {"id": ev["id"]}).update(
+                {k: v for k, v in ev.items() if k in ("q", "summary", "status", "tags", "serves")})
+        except (ValueError, KeyError, TypeError, AttributeError):
+            continue
+    return entries
+
+
+def ctx_line(e: dict) -> str:
+    return f"{e['id']} [{e.get('status', 'draft')}] {(e.get('summary') or e.get('q', ''))[:80]}"
+
+
+def ctx_brief(cwd: str, limit: int = 25) -> str:
+    entries = [e for e in ctx_entries(cwd).values() if e.get("status") != "superseded"]
+    if not entries:
+        return ""
+    lines = [f"[ctx] 작업 기억 {len(entries)}개 (ctx/INDEX.md). 조사·분석 전 `python3 .harness/bin/ctx.py find <키워드>`; "
+             "valid 항목은 `ctx.py get <ID>`로 읽고 재사용 — 같은 조사·질문을 다시 하지 말 것."]
+    lines += [f"  - {ctx_line(e)}" for e in entries[-limit:]]
+    if len(entries) > limit:
+        lines.append(f"  - … 외 {len(entries) - limit}개는 ctx/INDEX.md")
+    return "\n".join(lines)
+
+
+def ctx_related(cwd: str, prompt: str, limit: int = 3) -> str:
+    q = prompt.lower()
+    ranked = []
+    for e in ctx_entries(cwd).values():
+        if e.get("status") == "superseded":
+            continue
+        hay = " ".join([e["id"].replace("/", " "), e.get("q", ""), e.get("summary", ""),
+                        " ".join(e.get("tags", []))]).lower()
+        s = max(sum(1 for t in set(CTX_TOKEN.findall(q)) if t in hay),
+                sum(1 for t in set(CTX_TOKEN.findall(hay)) if t in q))
+        s += 5 if e["id"].lower() in q else 0
+        if s >= 2:
+            ranked.append((s, e))
+    if not ranked:
+        return ""
+    ranked.sort(key=lambda r: -r[0])
+    return "[ctx] 관련 기록 — 재사용 전 `ctx.py get <ID>`로 신선도 확인: " + \
+        " / ".join(ctx_line(e) for _, e in ranked[:limit])
+
+
+def emit_context(event: str, text: str) -> None:
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}},
+                     ensure_ascii=False))
 
 
 def deny(cwd: str, reason: str, detail: str) -> None:
@@ -63,6 +158,8 @@ def deny(cwd: str, reason: str, detail: str) -> None:
 
 PROTECTED_PATH = re.compile(r"(\.codex/config\.toml|/etc/codex|\.codex/hooks|\.codex/hooks\.json|\.codex/rules|\.codex/auth\.json)")
 WRITE_VERBS = re.compile(r"(>|\btee\b|\bsed\s+-i|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\btruncate\b|\bperl\s+-pi)")
+CTX_EVENTS = re.compile(r"ctx/index\.jsonl")
+CTX_EVENTS_REASON = "ctx/index.jsonl은 직접 수정 금지. `python3 .harness/bin/ctx.py new|done|status`로만 기록."
 
 
 def _urls(cmd: str):
@@ -97,6 +194,8 @@ def check_shell(cmd: str):
     # Platform settings and the harness guardrails themselves.
     if PROTECTED_PATH.search(c) and WRITE_VERBS.search(c):
         return "플랫폼 Codex 설정·하네스 가드레일(.codex/hooks, .codex/rules) 수정은 금지. 필요하면 사용자에게 요청."
+    if CTX_EVENTS.search(c) and WRITE_VERBS.search(c):
+        return CTX_EVENTS_REASON
 
     # Platform / supervisor processes.
     if re.search(r"\bkill\s+(-\S+\s+)*-1\b|\bkill\s+(-\S+\s+)*1\b(?!\d)", c) or \
@@ -118,12 +217,15 @@ def check_patch(patch: str, cwd: str):
         p = path.strip().replace("\\", "/")
         if PROTECTED_PATH.search(p):
             return f"{p}: 하네스 가드레일/플랫폼 설정 파일은 에이전트가 수정할 수 없음."
+        if CTX_EVENTS.search(p):
+            return CTX_EVENTS_REASON
         if p.startswith("/") or p.startswith("~"):
             target = Path(os.path.expanduser(p)).resolve()
             try:
                 target.relative_to(ws.resolve())
             except ValueError:
-                return f"{p}: 작업 공간 밖 파일 수정은 금지."
+                if not str(target).startswith(str(Path.home() / "wt")):
+                    return f"{p}: 작업 공간 밖 파일 수정은 금지."
     return None
 
 
@@ -142,7 +244,7 @@ def handle_pretool(payload: dict) -> None:
         deny(cwd, reason, cmd)
 
 
-# ---------------------------------------------------------------- UserPromptSubmit
+# ---------------------------------------------------------------- other events
 
 def handle_prompt(payload: dict) -> None:
     cwd = payload.get("cwd", "")
@@ -153,6 +255,24 @@ def handle_prompt(payload: dict) -> None:
                           "reason": f"[harness] 현재 모델 '{model}'은 Astra 계열(대회 사용 제한). "
                                     "/model 에서 Sol 6.1 / Terra 5.6 / Luna 6 / Sol 6.0 중 하나로 바꾼 뒤 다시 요청하세요."},
                          ensure_ascii=False))
+        return
+    related = ctx_related(cwd, str(payload.get("prompt", "")))
+    emit_context("UserPromptSubmit", clock_line() + ("\n" + related if related else ""))
+
+
+def handle_session_start(payload: dict) -> None:
+    cwd = payload.get("cwd", "")
+    lines = [clock_line()]
+    worklog = workspace_root(cwd) / "docs" / "WORKLOG.md"
+    if payload.get("source") in ("resume", "compact", "clear", "fork") or (worklog.exists() and worklog.stat().st_size > 400):
+        lines.append("[harness] 이어서 작업 중이면 먼저 docs/WORKLOG.md 의 '현재 상태/다음 단계'를 읽고 시작할 것.")
+    model = str(payload.get("model") or "")
+    if "astra" in model.lower():
+        lines.append(f"[harness] ⚠ 현재 모델 '{model}'은 Astra 계열(사용 제한). /model 로 변경 필요.")
+    brief = ctx_brief(cwd)
+    if brief:
+        lines.append(brief)
+    emit_context("SessionStart", "\n".join(lines))
 
 
 def main() -> int:
@@ -171,6 +291,8 @@ def main() -> int:
             handle_pretool(payload)
         elif mode == "prompt":
             handle_prompt(payload)
+        elif mode == "session-start":
+            handle_session_start(payload)
     except Exception as exc:  # fail open, but leave a trace
         log_event(payload.get("cwd", ""), "hook-errors", {"mode": mode, "error": repr(exc)})
     return 0

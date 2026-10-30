@@ -5,5 +5,5 @@
 project_doc_max_bytes = 65536
 
 [agents]
-max_concurrent_threads_per_session = 3
+max_concurrent_threads_per_session = 4
 default_subagent_reasoning_effort = "medium"

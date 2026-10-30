@@ -1,7 +1,7 @@
 {
   "name": "hynix-harness",
-  "version": "0.2.0",
-  "description": "Slim 180-minute harness for Codex: research, verification gate, and submission documents. Hand-offs use a 6-section SCRIPT ([Role][Context][Task][Rules][Output][Done]).",
+  "version": "0.1.0",
+  "description": "180-minute data/AI problem-solving harness: intent capture, parallel research, verification gates, document writing/review, and cognition checks for Codex.",
   "author": {
     "name": "Jake Kim"
   },
@@ -10,7 +10,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Hynix Harness",
-    "shortDescription": "Research, verify and doc skills for timed AI missions",
+    "shortDescription": "Intent, verification, docs and cognition skills for timed AI missions",
     "developerName": "Jake Kim",
     "category": "Productivity",
     "capabilities": ["Read", "Write"]

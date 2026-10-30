@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Self-test for the harness repo: hook policy, rules, skill frontmatter, 6-section SCRIPT format
-# in prompts and agents, JSON/TOML syntax, shell syntax, and an end-to-end bootstrap.
+# Self-test for the harness repo: hook policy, rules, skill frontmatter, JSON/TOML syntax,
+# shell syntax, and an end-to-end bootstrap into a temporary workspace.
 set -uo pipefail
 here="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$here"
@@ -30,12 +30,10 @@ if tomllib:
             assert not missing, f"{p}: missing {missing}"
 EOF
 
-step "skills: exactly research, verify, doc; name matches folder; description present"
+step "skill frontmatter (name matches folder, description present)"
 check "$PY" - <<'EOF'
 import re, pathlib
-skills = sorted(pathlib.Path("plugins/hynix-harness/skills").glob("*/SKILL.md"))
-assert [p.parent.name for p in skills] == ["doc", "research", "verify"], [p.parent.name for p in skills]
-for p in skills:
+for p in pathlib.Path("plugins/hynix-harness/skills").glob("*/SKILL.md"):
     t = p.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n", t, re.S)
     assert m, f"{p}: no frontmatter"
@@ -43,25 +41,6 @@ for p in skills:
     assert fm.get("name", "").strip() == p.parent.name, f"{p}: name != folder"
     assert len(fm.get("description", "").strip()) > 40, f"{p}: description too short"
 EOF
-
-step "SCRIPT: every copyable script uses the 6 sections in order; agents name them"
-check "$PY" - <<'EOF'
-import re, pathlib
-secs = ["[Role]", "[Context]", "[Task]", "[Rules]", "[Output]", "[Done]"]
-t = pathlib.Path("template/prompts/SCRIPT.md").read_text(encoding="utf-8")
-blocks = re.findall(r"### S\d.*?\n```\n(.*?)```", t, re.S)
-assert len(blocks) >= 6, f"expected >=6 scripts, got {len(blocks)}"
-for b in blocks:
-    got = [l[:l.index("]") + 1] for l in b.splitlines() if l.startswith("[")]
-    assert got == secs, f"sections out of order: {got}"
-for p in pathlib.Path("template/.codex/agents").glob("*.toml"):
-    a = p.read_text(encoding="utf-8")
-    assert "SCRIPT" in a and all(s in a for s in ["[Role]", "[Rules]", "[Output]", "[Done]"]), p
-EOF
-
-step "no references to removed parts"
-if grep -rnE 'ctx\.py|clock\.sh|fanout|wt\.sh|\$(task-intake|stakeholder-sync|parallel-research|data-profile|plan-slice|worktree-lanes|verify-gate|doc-writer|doc-review|cognition-check|defense-prep|handoff|ctx)\b|INTENT\.md|PLAN\.md|WORKLOG\.md|COGNITION\.md|DECISIONS\.md' \
-     template plugins bootstrap.sh; then echo "  FAIL: stale references above"; fail=1; else echo "  ok"; fi
 
 step "shell syntax"
 for f in bootstrap.sh template/.harness/bin/*.sh tests/run_all.sh; do check bash -n "$f"; done
@@ -81,13 +60,35 @@ tmp="$(mktemp -d)"
 export HYNIX_HARNESS_HOME="$tmp/state"
 mkdir -p "$tmp/ws"
 if bash bootstrap.sh "$tmp/ws" >"$tmp/boot.log" 2>&1 && ! grep -q "FAIL" "$tmp/boot.log" \
-   && [[ -f "$tmp/ws/AGENTS.md" && -f "$tmp/ws/.agents/skills/verify/SKILL.md" && -f "$tmp/ws/prompts/SCRIPT.md" ]] \
-   && [[ "$(ls "$tmp/ws/.agents/skills" | wc -l)" -eq 3 ]] \
+   && [[ -f "$tmp/ws/AGENTS.md" && -f "$tmp/ws/.agents/skills/verify-before-done/SKILL.md" ]] \
    && [[ "$(git -C "$tmp/ws" log --oneline | wc -l)" -eq 1 ]]; then
   bash bootstrap.sh "$tmp/ws" >/dev/null 2>&1
   if [[ "$(git -C "$tmp/ws" log --oneline | wc -l)" -eq 1 ]]; then echo "  ok (installed, idempotent)"
   else echo "  FAIL: re-run created a new commit"; fail=1; fi
+  if git -C "$tmp/ws" ls-files --error-unmatch ctx/README.md ctx/index.jsonl .gitattributes >/dev/null 2>&1 \
+     && [[ -f "$tmp/ws/ctx/INDEX.md" ]] && ! git -C "$tmp/ws" ls-files --error-unmatch ctx/INDEX.md >/dev/null 2>&1 \
+     && [[ "$(git -C "$tmp/ws" check-attr merge ctx/index.jsonl)" == *union ]]; then echo "  ok (ctx/ committed, INDEX.md generated, union merge)"
+  else echo "  FAIL: ctx/ install"; fail=1; fi
 else echo "  FAIL: see $tmp/boot.log"; fail=1; fi
+
+step "fanout reuses valid ctx lanes (fake codex)"
+cat > "$tmp/fakecodex" <<'EOF'
+#!/usr/bin/env bash
+out=""; while (( $# )); do [[ "$1" == -o ]] && { out="$2"; shift; }; shift; done
+printf '## 결론\n- fake 결론\n## 근거\n- [사실] x\n## 미확인\n없음\n' > "$out"
+echo run >> "$(dirname "$out")/../../../.fake-runs"
+EOF
+chmod +x "$tmp/fakecodex"
+mkdir -p "$tmp/ws/ctx/research"
+printf 'alpha|첫 질문\nbeta|두 번째 질문\n# gamma|주석\n' > "$tmp/ws/ctx/research/lanes.txt"
+runs() { if [[ -f "$tmp/ws/.fake-runs" ]]; then wc -l < "$tmp/ws/.fake-runs" | tr -d ' '; else echo 0; fi; }
+fan() { (cd "$tmp/ws" && CODEX_BIN="$tmp/fakecodex" bash .harness/bin/fanout.sh ctx/research/lanes.txt 2) >"$tmp/fan.log" 2>&1; }
+fan; first=$(runs)
+fan; second=$(runs)
+FANOUT_FORCE=1 fan; third=$(runs)
+state=$(cd "$tmp/ws" && "$PY" .harness/bin/ctx.py state research/alpha)
+if [[ "$first" == 2 && "$second" == 2 && "$third" == 4 && "$state" == valid ]]; then echo "  ok (2 lanes run, re-run skipped, FANOUT_FORCE re-ran)"
+else echo "  FAIL: runs $first/$second/$third, state=$state (see $tmp/fan.log)"; fail=1; fi
 
 echo; if (( fail )); then echo "SOME CHECKS FAILED"; else echo "ALL CHECKS PASSED"; fi
 exit $fail
