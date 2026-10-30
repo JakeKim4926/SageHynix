@@ -11,7 +11,7 @@ description: 과제 데이터를 처음 열 때와, 집계·지표·예측·분�
 1. 원본 데이터는 읽기만 한다. 가공본은 별도 경로에 쓰고 원본을 덮어쓰지 않는다.
 2. 프로파일을 `docs/research/data-profile.md`의 `## 근거`에 남긴다.
    - 표 데이터(CSV·TSV·JSONL): `python3 .agents/skills/analyze/scripts/profile_data.py <파일>...` 출력을 그대로 붙인다. 출력은 사실만이다.
-   - Excel·Parquet 등 스크립트가 읽지 않는 표: pandas로 열어 같은 항목(행·열·중복·열별 타입·결측률·고유값·범위)을 직접 적는다.
+   - Excel·Parquet 등 스크립트가 읽지 않는 표: pandas로 열어 같은 항목(행·열·중복·열별 타입·결측률·고유값·범위)을 직접 적는다. pandas만으로는 못 읽는다 — xlsx는 `openpyxl`, Parquet은 `pyarrow`가 함께 필요하다(pandas 설치 문서의 선택 의존성). import로 먼저 확인하고 없을 때만 설치해 `requirements.txt`에 적는다(AGENTS.md §6, 커밋은 `chore(deps)` 별도).
    - 표가 아닌 데이터(텍스트·이미지·로그 원문·파형 등): 파일 수·크기·형식과 샘플 3개를 직접 열어 본 내용을 적는다. 표 항목을 억지로 채우지 않는다.
 3. 의미 확인: [questions.md](references/questions.md)에서 원문·데이터로 답할 수 없는 것은 question(Q-n), 시간 때문에 고른 기본값은 assumption(A-n)으로 ledger에 남긴다. 담당자에게는 짧은 질문과 선택지를 보낸다($intent 4단계).
 4. `## 결론` 3줄: 분석 단위(행·파일 하나가 무엇인가) / 타깃·지표 후보 / 가장 큰 위험(누수·불균형·결측). `$intent`의 AC 작성 근거로 쓰고, 이미 승인된 AC와 어긋나면 `$intent` "바꿀 때"로 간다.
