@@ -1,0 +1,4 @@
+#!/bin/sh
+# main 머지 = 완료 검사 (git merge 자동 커밋 경로). 충돌 해결 후 git commit은 pre-commit이 같은 검사를 한다.
+PY=python3; command -v python3 >/dev/null 2>&1 || PY=python
+exec "$PY" "$(git rev-parse --show-toplevel)/.codex/hooks/intent_trace.py" pre-merge-commit
