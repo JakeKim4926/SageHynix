@@ -30,7 +30,6 @@ REQUIRED = {
     "question": ("id", "refs", "what"),
     "answer": ("refs", "what"),
     "verify": ("refs", "result", "line"),
-    "audit": ("refs", "result", "line"),
 }
 ID_PREFIX = {"decision": "D", "assumption": "A", "question": "Q"}
 VERIFY_RESULTS = ("PASS", "FAIL", "미검증", "생략")

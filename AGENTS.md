@@ -27,7 +27,7 @@
 ## 2. 작업 루프
 
 ```
-과제 파악·조사 → $intent(원문 반입·계약·의도 감사·AC 승인)
+과제 파악·조사 → $intent(원문 반입·계약·AC 승인)
 → [브랜치 → (구현 → $verify → 커밋) × n → main 머지] × N → 제출
 ```
 
@@ -43,7 +43,7 @@
 
 | 상황 | Skill |
 |---|---|
-| 원문 반입, 목적·요구사항·수용 기준(AC) 작성·변경, 가정·질문·결정 기록, 의도 감사 | `$intent` |
+| 원문 반입, 목적·요구사항·수용 기준(AC) 작성·변경, 가정·질문·결정 기록 | `$intent` |
 | 테스트 범위 결정, 완료 판정, 커밋 | `$verify` |
 | 브랜치 생성, 커밋 단위·메시지, main 머지, 제출 전 정리 | `$git` |
 | FE 최초 준비·런타임·미리보기 문제 | `$fe-setup` |
@@ -54,7 +54,7 @@ FE Skill 3종은 React/Vite 앱 전용이다. 새 FE는 `$fe-setup` → `$fe-des
 
 ## 4. 서브에이전트와 지시 형식
 
-- `.codex/agents/`: `researcher`(읽기 전용 조사), `verifier`(독립 검증·의도 감사). 둘 다 코드를 수정하지 않는다.
+- `.codex/agents/`: `researcher`(읽기 전용 조사), `verifier`(독립 검증). 둘 다 코드를 수정하지 않는다.
 - 지시는 `prompts/SCRIPT.md`의 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]`으로 쓴다. 받는 쪽은 대화를 모른다.
 - **서로 독립인 질문만** 병렬로, 한 번에 최대 3개. 결과에 의존하는 일은 순차로. 토큰 사용량도 평가 신호다.
 
@@ -62,7 +62,7 @@ FE Skill 3종은 React/Vite 앱 전용이다. 새 FE는 `$fe-setup` → `$fe-des
 
 - 원문: `docs/task/` — 과제 지시서 사본. 반입 후 수정·삭제 금지(훅 차단)
 - 계약: `docs/INTENT.md` — 목적 P-n → 요구사항 R-n → 수용 기준 AC-n.m, 행마다 원문 근거
-- 이력: `docs/ledger.jsonl` — 가정 A-n·질문 Q-n·결정 D-n·검증·감사. 끝에 추가만 한다
+- 이력: `docs/ledger.jsonl` — 가정 A-n·질문 Q-n·결정 D-n·검증. 끝에 추가만 한다
 - 조사 결과: `docs/research/<주제>.md` (결론 / 근거 / 미확인 / 담당자 질문)
 - 현재 상태(인수인계)·테스트 계획: `docs/LOG.md`
 - 형식은 `$intent` 템플릿, 커밋 때 `.codex/hooks/git`이 검사한다. 조사·질문 전에 `ls docs/research/`와 INTENT·ledger를 먼저 본다. 같은 조사·같은 질문을 다시 하지 않는다.

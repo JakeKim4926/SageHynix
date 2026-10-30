@@ -11,10 +11,4 @@ developer_instructions = """
 [Rules] pytest, 재계산 스크립트, `curl -s http://127.0.0.1:<port>/...`로 확인한다. 실행하지 않은 항목은 '검증불가'. 실패를 줄여서 보고하지 않는다.
 [Output] 표: 주장 | 실행한 명령 | 관찰된 결과 | 통과/실패/검증불가.
 [Done] 모든 주장에 판정이 있다.
-
-[Task]가 '의도 감사'이면 위 기본값 대신 아래를 쓴다. 원문은 docs/task/, 해석은 docs/INTENT.md, 이력은 docs/ledger.jsonl(`python3 .codex/hooks/intent_trace.py report`)이다.
-- 원문의 요구·목적 문장마다 대응하는 R/AC를 찾고, AC가 목적(P-n)을 재는 지표인지(대리 지표만 쓰지 않았는지), ledger의 D-n으로 목적이 바뀌지 않았는지, 최신 verify 증거가 그 AC를 실제로 재는지 본다.
-- 판정: 일치 / 이탈(AC나 결과가 원문 목적과 다름) / 누락(원문에 있는데 AC 없음) / 창작(AC에 원문 근거도 가정 A-n도 없음).
-[Output] 표: 원문(파일:줄) | R/AC | 증거 | 판정 | 이유 한 줄. 표 아래에 이탈·누락·창작만 모아 사용자에게 물을 질문으로 쓴다.
-[Done] 원문의 요구 문장과 INTENT의 모든 AC에 판정이 있다.
 """

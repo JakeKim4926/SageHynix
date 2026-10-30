@@ -42,7 +42,7 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 | 사람 → Codex, Codex → 서브에이전트, 세션 → 새 세션 | `prompts/SCRIPT.md` 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]` |
 | 업무 담당자(메신저) | 짧은 자연어 질문 + 선택지 |
 
-작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 원문은 `docs/task/`, 목적·요구사항·AC는 `docs/INTENT.md`, 가정·질문·결정·검증·감사 이력은 `docs/ledger.jsonl`(추가만), 조사는 `docs/research/<주제>.md`, 인수인계는 `docs/LOG.md`. 추적표는 `python3 .codex/hooks/intent_trace.py report`, 훅 자체 테스트는 `python3 -m unittest discover -s .codex/hooks -p "test_*.py"`.
+작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 원문은 `docs/task/`, 목적·요구사항·AC는 `docs/INTENT.md`, 가정·질문·결정·검증 이력은 `docs/ledger.jsonl`(추가만), 조사는 `docs/research/<주제>.md`, 인수인계는 `docs/LOG.md`. 추적표는 `python3 .codex/hooks/intent_trace.py report`, 훅 자체 테스트는 `python3 -m unittest discover -s .codex/hooks -p "test_*.py"`.
 
 플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결은 직접 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다.
 
