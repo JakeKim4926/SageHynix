@@ -49,7 +49,7 @@ AGENTS.md                 Codex 작업 규칙 및 시작 절차
 .codex/                   프로젝트 설정, 에이전트(researcher, verifier), 훅, 규칙
 .harness/bin/              환경 점검, 검증
 .harness/tests/            하네스 자체 테스트 (과제 tests/와 분리)
-prompts/SCRIPT.md          6칸 지시 형식과 복사용 예시 1개
+prompts/SCRIPT.md          6칸 지시 형식과 복사용 빈 틀
 docs/                     INTENT, LOG, research/ (+ 하네스 안내 SETUP, DESIGN)
 setup.sh                  현재 폴더 초기화·선택 설치·검증
 bootstrap.sh              기존 과제 폴더에 하네스 적용
@@ -60,7 +60,7 @@ bootstrap.sh              기존 과제 폴더에 하네스 적용
 ## 과제 시작
 
 1. 환경 점검 통과 후 Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 6개가 보이는지, 허용 모델인지 확인한다.
-2. `prompts/SCRIPT.md`의 예시를 복사해 **실제 과제 지시서 경로**를 채우고 `$research`로 과제를 파악한다.
+2. `prompts/SCRIPT.md`의 빈 틀을 복사해 **실제 과제 지시서 경로**를 채우고 `$research`로 과제를 파악한다.
 3. 구현 → `$verify` → 커밋을 기능마다 반복한다.
 4. `$doc`으로 제출 문서를 쓰고 감사한다.
 
