@@ -13,4 +13,4 @@ description: React/TypeScript(Vite) FE 앱을 처음 만들거나, Node·npm 설
 4. 앱에 타입 검사·린트·빌드 명령을 마련하고 [FE 검증 계약](../verify/references/frontend.md)에 연결한다. 기존 명령 이름은 유지하고 대응 관계를 기록한다. 타입 검사 script가 없으면 `"typecheck": "tsc -b"`를 더한다. 테스트 도구가 없으면 `vitest @testing-library/react @testing-library/user-event jsdom`을 dev 의존성으로 설치하고 `"test": "vitest run --dir src"`를 둔다([test-strategy.md](../verify/references/test-strategy.md) 3절). 린트는 경고도 실패로 끝나게 한다(oxlint `--deny-warnings`, ESLint `--max-warnings 0`): 훅 의존성 누락·effect 안 setState가 경고 등급이라 그대로는 종료 코드 0으로 지나간다. 신규 앱은 생성 직후 [구조 규칙](../fe-build/references/structure.md)의 flat 구조로 맞추고(템플릿의 `export default App`은 named export로, 데모 코드·로고는 제거) 구조 검사 PASS를 확인한다.
 5. 실제 화면까지 확인하고 앱 경로·버전·설치/실행/검증 명령·API 경로·구조(구조 검사 첫 줄의 `구조=` 값 또는 "기존 앱 규칙")·미검증을 docs/LOG.md 현재 상태에 짧게 기록한다. 이미 확인된 환경에서 일반 UI 수정만 할 때는 설정을 반복하지 않는다. 신규 앱이면 다음은 fe-design 1단계(토큰 정의)다.
 
-준비 완료는 설치 성공뿐 아니라 서버 응답과 실제 미리보기까지 확인한 경우다. 브라우저를 사용할 수 없으면 서버까지만 검증했다고 보고한다. 이미 승인된 구현에 재승인을 요구하거나 제출·퀴즈를 별도로 호출하지 않는다.
+준비 완료는 설치 성공뿐 아니라 서버 응답과 실제 미리보기까지 확인한 경우다. 브라우저를 사용할 수 없으면 서버까지만 검증했다고 보고한다. 이미 승인된 구현에 재승인을 요구하지 않는다.
