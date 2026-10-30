@@ -1,6 +1,6 @@
 # 해커톤 환경 준비
 
-대상은 Bash 4+, Git, Python 3.9+를 실행할 수 있는 Linux 웹 IDE다. Windows에서는 Git Bash로 사전 점검할 수 있지만 실제 플랫폼 검증을 대신하지 않는다. 하네스의 ctx와 훅은 Python 표준 라이브러리만 사용한다.
+대상은 Bash 4+, Git, Python 3.9+를 실행할 수 있는 Linux 웹 IDE다. Windows에서는 Git Bash로 사전 점검할 수 있지만 실제 플랫폼 검증을 대신하지 않는다. 하네스의 점검 도구와 훅은 Python 표준 라이브러리만 사용한다.
 
 ## 1. 과제와 제출 폴더 확인
 
@@ -19,7 +19,7 @@ bash bootstrap.sh /실제/과제/폴더
 cd /실제/과제/폴더
 ```
 
-bootstrap은 기존 파일과 과제 README를 덮어쓰지 않는다. 내용이 다른 기존 파일은 충돌 목록으로 출력하고 실패 상태로 종료한다. 기존 AGENTS.md는 보존하고 AGENTS.harness.md를 추가하므로 직접 검토해 합친다. 프로젝트 설정·훅 충돌도 검토 후 반영한다. 자동 커밋은 하지 않는다. 설치된 하네스를 검토·커밋해야 새 worktree에 전달된다.
+bootstrap은 기존 파일과 과제 README를 덮어쓰지 않는다. 내용이 다른 기존 파일은 충돌 목록으로 출력하고 실패 상태로 종료한다. 기존 AGENTS.md는 보존하고 AGENTS.harness.md를 추가하므로 직접 검토해 합친다. 프로젝트 설정·훅 충돌도 검토 후 반영한다. 자동 커밋은 하지 않는다.
 
 ## 2. 설치 여부 판별
 
@@ -28,7 +28,7 @@ bash .harness/bin/doctor.sh
 bash .harness/bin/doctor.sh --profile verify data
 ```
 
-기본 점검: 실제 도구 실행 성공, Python/Bash 버전, 저장소 루트, 스킬 16개, 에이전트 정의 6개, 훅 JSON·정책 입력 테스트, ctx 초기화 및 병합 설정. `package.json`이 있는 경우에만 Node/npm도 요구한다. 점검은 패키지를 설치하거나 ctx를 갱신하지 않는다.
+기본 점검: 실제 도구 실행 성공, Python/Bash 버전, 저장소 루트, 스킬 6개, 에이전트 정의 2개, `prompts/SCRIPT.md`, 훅 JSON·정책 입력 테스트. `package.json`이 있는 경우에만 Node/npm도 요구한다. 점검은 패키지를 설치하거나 파일을 바꾸지 않는다.
 
 - `OK`: 해당 자동 검사 통과.
 - `FAIL`: 필수 항목 또는 명시적으로 선택한 기능을 사용할 수 없음. 종료 코드 1.
@@ -96,11 +96,11 @@ bash .harness/bin/start.sh
 
 1. 프로젝트 신뢰와 `/hooks`의 훅 신뢰를 확인한다. 명령이 없는 버전이면 플랫폼 도움말에서 지원 여부를 확인한다.
 2. `/status`로 모델을 확인하고 과제에서 허용한 모델을 선택한다.
-3. `/skills`에서 16개 스킬을 확인한다. 첫 요청에서 ctx 안내가 실제로 주입되는지 확인한다.
-4. 서브에이전트 노출을 별도로 확인한다. 불가능하면 순차 작업 또는 fanout 대안을 선택한다.
+3. `/skills`에서 6개 스킬(research, verify, doc, fe-setup, fe-build, fe-design)을 확인한다.
+4. 서브에이전트(researcher, verifier) 노출을 별도로 확인한다. 불가능하면 같은 SCRIPT를 메인 세션에서 순차로 실행한다.
 5. 웹 과제라면 실제 포트로 Browser 미리보기 연결을 확인한다.
 
-공유 상태 저장소는 메인 프로젝트 `.harness/state/`다. `HYNIX_HARNESS_HOME`으로 위치를 지정할 수 있으며, ctx와 로그는 각 레인의 폴더를 쓴다.
+공유 상태 저장소는 메인 프로젝트 `.harness/state/`다. `HYNIX_HARNESS_HOME`으로 위치를 지정할 수 있으며, 로그는 작업 폴더의 `.harness/log/`에 쓴다.
 
 ## 6. 하네스 자체 검증
 

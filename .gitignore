@@ -4,5 +4,3 @@ __pycache__/
 .harness/log/
 .harness/state/
 .harness/tmp/
-ctx/INDEX.md
-ctx/.INDEX.*.tmp

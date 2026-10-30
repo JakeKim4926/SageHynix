@@ -11,6 +11,6 @@ description: FE 화면·입력·조회·상호작용을 구현하거나 수정�
 2. 코드 작성 전에 [coding-rules.md](references/coding-rules.md)를 읽는다. 같은 작업에서 이미 읽고 변경되지 않았다면 재독하지 않는다. 기존 프로젝트 규칙을 우선한다.
 3. 비동기 조회·입력 화면은 [ui-states.md](references/ui-states.md), API·수치·차트는 [data-contract.md](references/data-contract.md)를 필요한 경우 읽는다.
 4. 실제 입력 → 계산/API → 화면의 가장 작은 동작 단위로 구현한다. 새 라이브러리·범용 엔진·추상화는 현재 요구사항에 필요할 때만 추가한다. 임시 데이터는 표시하고 실제 데이터 연결 여부를 구분한다.
-5. 변경한 동작을 확인하고 완료 판정은 기존 verify-gate의 [FE 절차](../verify-gate/references/frontend.md)를 따른다. 타입·빌드·화면 검증의 결과를 구분한다. 별도 검증 Skill이나 중복 기록을 만들지 않는다.
+5. 변경한 동작을 확인하고 완료 판정은 기존 verify의 [FE 절차](../verify/references/frontend.md)를 따른다. 타입·빌드·화면 검증의 결과를 구분한다. 별도 검증 Skill이나 중복 기록을 만들지 않는다.
 
 FE 변경 요약은 사용자 동작의 변화·검증 결과·남은 한계로 보고한다. 커밋·인지 점검은 상위 작업 흐름에서 한 번만 수행하며 하네스 유지보수에는 제출·퀴즈 루프를 적용하지 않는다.

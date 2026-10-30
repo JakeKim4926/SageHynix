@@ -1,5 +1,7 @@
 # 현재 배치 안내
 
+2026-10-30 축소: 180분 제한에서 skill 선택·전환 비용이 이득보다 크다고 보고 skill 16개를 6개(`research`·`verify`·`doc` + FE 3개 유지), 서브에이전트 6개를 2개(`researcher`·`verifier`)로 줄였다. `ctx/` 작업 기억(ctx.py·index.jsonl·훅 주입)은 `docs/research/<주제>.md` 4섹션 파일 규칙으로, worktree 레인·fanout·서술형 대비(cognition-check·defense-prep)는 제거했다. 지시 형식은 `prompts/SCRIPT.md`의 6칸으로 통일한다. 아래 4절(ctx 설계)은 당시 기록이다.
+
 2026-10-30 구조 전환: 루트 AGENTS.md·.agents/skills·.codex·.harness를 직접 사용한다. `setup.sh`는 현재 폴더 준비, `bootstrap.sh`는 별도 과제 폴더에 적용한다. 아래는 기존 설계 근거 기록이며, 최신 설치 절차는 [SETUP.md](SETUP.md)를 따른다. 플러그인 배포 경로는 제거했다.
 
 # 설계 근거

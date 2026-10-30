@@ -19,8 +19,8 @@ PROFILES = {
     "plot": {"matplotlib": "matplotlib"},
     "ml": {"sklearn": "scikit-learn"},
 }
-SKILLS = "task-intake stakeholder-sync parallel-research data-profile plan-slice worktree-lanes verify-gate doc-writer doc-review cognition-check defense-prep handoff ctx fe-setup fe-build fe-design".split()
-AGENTS = "data_profiler domain_researcher method_scout risk_reviewer verifier doc_auditor".split()
+SKILLS = "research verify doc fe-setup fe-build fe-design".split()
+AGENTS = "researcher verifier".split()
 
 
 def run(args, **kwargs):
@@ -58,21 +58,19 @@ def check(profiles):
     repo = run(["git", "rev-parse", "--show-toplevel"])
     report(repo.returncode == 0 and Path(repo.stdout.strip()).resolve() == ROOT, "현재 폴더가 Git 작업 공간 루트")
     for relative in ("AGENTS.md", ".codex/config.toml", ".codex/hooks/harness_hook.py",
-                     ".codex/rules/harness.rules", ".harness/bin/ctx.py", "ctx/index.jsonl"):
+                     ".codex/rules/harness.rules", "prompts/SCRIPT.md"):
         report((ROOT / relative).is_file(), relative)
     for skill in SKILLS:
         path = ROOT / ".agents/skills" / skill / "SKILL.md"
         report(path.is_file() and f"name: {skill}\n" in path.read_text(encoding="utf-8"), f"skill: {skill}")
-    report(all((ROOT / f".codex/agents/{agent}.toml").is_file() for agent in AGENTS), "서브에이전트 정의 6개")
+    report(all((ROOT / f".codex/agents/{agent}.toml").is_file() for agent in AGENTS), f"서브에이전트 정의 {len(AGENTS)}개")
     try:
         hooks = json.loads((ROOT / ".codex/hooks.json").read_text(encoding="utf-8"))
         report(all(event in hooks["hooks"] for event in ("SessionStart", "UserPromptSubmit", "PreToolUse")), "훅 JSON 및 이벤트 3개")
     except (OSError, ValueError, KeyError, TypeError):
         report(False, "훅 JSON 및 이벤트 3개")
-    attributes = ROOT / ".gitattributes"
-    report(attributes.exists() and "ctx/index.jsonl merge=union" in attributes.read_text(encoding="utf-8"), "ctx 병합 설정")
-    for command, deny in (("git push origin main", True), ("echo {} >> ctx/index.jsonl", True),
-                          ("python3 .harness/bin/ctx.py find x", False)):
+    for command, deny in (("git push origin main", True), ("echo x >> .codex/hooks.json", True),
+                          ("python3 -m pytest -q", False)):
         payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(ROOT)})
         result = run([sys.executable, str(ROOT / ".codex/hooks/harness_hook.py"), "pretool"],
                      input=payload, env={**os.environ, "HYNIX_HARNESS_NOLOG": "1"})
@@ -102,15 +100,14 @@ def initialize():
     if result.returncode or Path(result.stdout.strip()).resolve() != ROOT:
         print("FAIL: 먼저 이 폴더를 Git 저장소 루트로 준비하세요. docs/SETUP.md 참고.")
         return False
-    append_lines(ROOT / ".gitignore", [".venv/", "__pycache__/", "*.pyc", ".harness/log/", ".harness/state/", "ctx/INDEX.md", "ctx/.INDEX.*.tmp"])
-    append_lines(ROOT / ".gitattributes", ["ctx/index.jsonl merge=union"])
+    append_lines(ROOT / ".gitignore", [".venv/", "__pycache__/", "*.pyc", ".harness/log/", ".harness/state/"])
     for path in (ROOT / ".harness/bin").glob("*.sh"):
         path.chmod(path.stat().st_mode | 0o111)
     for path in (ROOT / ".agents/skills").glob("*/scripts/*.py"):
         path.chmod(path.stat().st_mode | 0o111)
-    result = run([sys.executable, str(ROOT / ".harness/bin/ctx.py"), "init"])
-    print(result.stdout or result.stderr)
-    return result.returncode == 0
+    (ROOT / "docs/research").mkdir(parents=True, exist_ok=True)
+    print("준비 완료: 실행 권한, Git 제외 설정, docs/research/")
+    return True
 
 
 def install(profiles):

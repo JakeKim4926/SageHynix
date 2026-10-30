@@ -45,14 +45,13 @@ class EnvironmentTests(unittest.TestCase):
 
     def fixture(self):
         for relative in ("AGENTS.md", ".codex/config.toml", ".codex/hooks/harness_hook.py",
-                         ".codex/rules/harness.rules", ".harness/bin/ctx.py", "ctx/index.jsonl"):
+                         ".codex/rules/harness.rules", "prompts/SCRIPT.md"):
             self.file(relative)
         for skill in env.SKILLS:
             self.file(f".agents/skills/{skill}/SKILL.md", f"---\nname: {skill}\ndescription: test\n---\n")
         for agent in env.AGENTS:
             self.file(f".codex/agents/{agent}.toml")
         self.file(".codex/hooks.json", json.dumps({"hooks": {key: [] for key in ("SessionStart", "UserPromptSubmit", "PreToolUse")}}))
-        self.file(".gitattributes", "ctx/index.jsonl merge=union\n")
 
     def fake_run(self, args, **kwargs):
         out = "version 1\n"
@@ -82,7 +81,7 @@ class EnvironmentTests(unittest.TestCase):
 
     def test_missing_one_skill_fails(self):
         self.fixture()
-        (self.root / ".agents/skills/ctx/SKILL.md").unlink()
+        (self.root / ".agents/skills/research/SKILL.md").unlink()
         with patch.object(env, "run", side_effect=self.fake_run):
             self.assertEqual(env.check([]), 1)
 
@@ -157,7 +156,7 @@ class EnvironmentTests(unittest.TestCase):
         self.assertEqual((self.root / "README.md").read_text(), "original task")
         self.assertEqual((self.root / "AGENTS.md").read_text(), "organizer instructions")
         self.assertTrue((self.root / "AGENTS.harness.md").exists())
-        self.assertTrue((self.root / ".agents/skills/ctx/SKILL.md").exists())
+        self.assertTrue((self.root / ".agents/skills/research/SKILL.md").exists())
         self.assertFalse((self.root / "tests").exists())
 
 

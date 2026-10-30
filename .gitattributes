@@ -1,5 +1,3 @@
 * text=auto eol=lf
 *.png binary
 *.pdf binary
-
-ctx/index.jsonl merge=union

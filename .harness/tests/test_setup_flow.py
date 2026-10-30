@@ -33,12 +33,13 @@ class SetupFlow(unittest.TestCase):
 
             call("bootstrap.sh", str(workspace))
             self.assertEqual((workspace / "README.md").read_text(), "organizer task")
-            self.assertTrue((workspace / "ctx/index.jsonl").exists())
-            events = workspace / "ctx/index.jsonl"
-            original_events = events.read_bytes()
+            self.assertTrue((workspace / "prompts/SCRIPT.md").exists())
+            self.assertTrue((workspace / "docs/research").is_dir())
+            agents = workspace / "AGENTS.md"
+            original_agents = agents.read_bytes()
             call("bootstrap.sh", str(workspace))
             call("setup.sh", cwd=workspace)
-            self.assertEqual(events.read_bytes(), original_events)
+            self.assertEqual(agents.read_bytes(), original_agents)
             before = {str(p): p.read_bytes() for p in workspace.rglob("*") if p.is_file() and ".git" not in p.parts}
             output = call(".harness/bin/doctor.sh", cwd=workspace)
             self.assertIn("codex-test-version", output)

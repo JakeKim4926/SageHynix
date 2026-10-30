@@ -2,8 +2,8 @@
 """Codex hook entrypoint for the hackathon harness.
 
 Usage (from .codex/hooks.json):
-    harness_hook.py session-start   # SessionStart: inject handoff reminder + ctx/ list
-    harness_hook.py prompt          # UserPromptSubmit: model guard + related ctx/ entries, log prompt
+    harness_hook.py session-start   # SessionStart: inject handoff reminder
+    harness_hook.py prompt          # UserPromptSubmit: model guard, log prompt
     harness_hook.py pretool         # PreToolUse: block outbound / destructive / self-edit
 
 Reads one JSON object on stdin. Standard library only.
@@ -50,65 +50,6 @@ def log_event(cwd: str, name: str, record: dict) -> None:
         pass
 
 
-# ---------------------------------------------------------------- ctx/ work memory
-# Reads ctx/index.jsonl directly (no import of ctx.py, no file hashing) so the hook stays fast
-# and self-contained. Statuses shown here are as recorded; `ctx.py get` checks freshness.
-
-CTX_TOKEN = re.compile(r"[0-9a-z가-힣_]{2,}")
-
-
-def ctx_entries(cwd: str) -> dict:
-    entries = {}
-    try:
-        lines = (workspace_root(cwd) / "ctx" / "index.jsonl").read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return entries
-    for line in lines:
-        try:
-            ev = json.loads(line)
-            entries.setdefault(ev["id"], {"id": ev["id"]}).update(
-                {k: v for k, v in ev.items() if k in ("q", "summary", "status", "tags", "serves")})
-        except (ValueError, KeyError, TypeError, AttributeError):
-            continue
-    return entries
-
-
-def ctx_line(e: dict) -> str:
-    return f"{e['id']} [{e.get('status', 'draft')}] {(e.get('summary') or e.get('q', ''))[:80]}"
-
-
-def ctx_brief(cwd: str, limit: int = 25) -> str:
-    entries = [e for e in ctx_entries(cwd).values() if e.get("status") != "superseded"]
-    if not entries:
-        return ""
-    lines = [f"[ctx] 작업 기억 {len(entries)}개 (ctx/INDEX.md). 조사·분석 전 `python3 .harness/bin/ctx.py find <키워드>`; "
-             "valid 항목은 `ctx.py get <ID>`로 읽고 재사용 — 같은 조사·질문을 다시 하지 말 것."]
-    lines += [f"  - {ctx_line(e)}" for e in entries[-limit:]]
-    if len(entries) > limit:
-        lines.append(f"  - … 외 {len(entries) - limit}개는 ctx/INDEX.md")
-    return "\n".join(lines)
-
-
-def ctx_related(cwd: str, prompt: str, limit: int = 3) -> str:
-    q = prompt.lower()
-    ranked = []
-    for e in ctx_entries(cwd).values():
-        if e.get("status") == "superseded":
-            continue
-        hay = " ".join([e["id"].replace("/", " "), e.get("q", ""), e.get("summary", ""),
-                        " ".join(e.get("tags", []))]).lower()
-        s = max(sum(1 for t in set(CTX_TOKEN.findall(q)) if t in hay),
-                sum(1 for t in set(CTX_TOKEN.findall(hay)) if t in q))
-        s += 5 if e["id"].lower() in q else 0
-        if s >= 2:
-            ranked.append((s, e))
-    if not ranked:
-        return ""
-    ranked.sort(key=lambda r: -r[0])
-    return "[ctx] 관련 기록 — 재사용 전 `ctx.py get <ID>`로 신선도 확인: " + \
-        " / ".join(ctx_line(e) for _, e in ranked[:limit])
-
-
 def emit_context(event: str, text: str) -> None:
     print(json.dumps({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}},
                      ensure_ascii=False))
@@ -127,8 +68,6 @@ def deny(cwd: str, reason: str, detail: str) -> None:
 
 PROTECTED_PATH = re.compile(r"(\.codex/config\.toml|/etc/codex|\.codex/hooks|\.codex/hooks\.json|\.codex/rules|\.codex/auth\.json)")
 WRITE_VERBS = re.compile(r"(>|\btee\b|\bsed\s+-i|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\btruncate\b|\bperl\s+-pi)")
-CTX_EVENTS = re.compile(r"ctx/index\.jsonl")
-CTX_EVENTS_REASON = "ctx/index.jsonl은 직접 수정 금지. `python3 .harness/bin/ctx.py new|done|status`로만 기록."
 
 
 def _urls(cmd: str):
@@ -163,8 +102,6 @@ def check_shell(cmd: str):
     # Platform settings and the harness guardrails themselves.
     if PROTECTED_PATH.search(c) and WRITE_VERBS.search(c):
         return "플랫폼 Codex 설정·하네스 가드레일(.codex/hooks, .codex/rules) 수정은 금지. 필요하면 사용자에게 요청."
-    if CTX_EVENTS.search(c) and WRITE_VERBS.search(c):
-        return CTX_EVENTS_REASON
 
     # Platform / supervisor processes.
     if re.search(r"\bkill\s+(-\S+\s+)*-1\b|\bkill\s+(-\S+\s+)*1\b(?!\d)", c) or \
@@ -186,15 +123,12 @@ def check_patch(patch: str, cwd: str):
         p = path.strip().replace("\\", "/")
         if PROTECTED_PATH.search(p):
             return f"{p}: 하네스 가드레일/플랫폼 설정 파일은 에이전트가 수정할 수 없음."
-        if CTX_EVENTS.search(p):
-            return CTX_EVENTS_REASON
         if p.startswith("/") or p.startswith("~"):
             target = Path(os.path.expanduser(p)).resolve()
             try:
                 target.relative_to(ws.resolve())
             except ValueError:
-                if not str(target).startswith(str(Path.home() / "wt")):
-                    return f"{p}: 작업 공간 밖 파일 수정은 금지."
+                return f"{p}: 작업 공간 밖 파일 수정은 금지."
     return None
 
 
@@ -225,9 +159,6 @@ def handle_prompt(payload: dict) -> None:
                                     "/model 에서 Sol 6.1 / Terra 5.6 / Luna 6 / Sol 6.0 중 하나로 바꾼 뒤 다시 요청하세요."},
                          ensure_ascii=False))
         return
-    related = ctx_related(cwd, str(payload.get("prompt", "")))
-    if related:
-        emit_context("UserPromptSubmit", related)
 
 
 def handle_session_start(payload: dict) -> None:
@@ -239,9 +170,6 @@ def handle_session_start(payload: dict) -> None:
     model = str(payload.get("model") or "")
     if "astra" in model.lower():
         lines.append(f"[harness] ⚠ 현재 모델 '{model}'은 Astra 계열(사용 제한). /model 로 변경 필요.")
-    brief = ctx_brief(cwd)
-    if brief:
-        lines.append(brief)
     if lines:
         emit_context("SessionStart", "\n".join(lines))
 

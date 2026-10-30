@@ -23,11 +23,10 @@ def main():
         parser.error("Git을 찾지 못했습니다. docs/SETUP.md의 도구 복구 안내를 확인하세요.")
     conflicts = []
     paths = [SOURCE / "AGENTS.md", SOURCE / "setup.sh"]
-    for directory in (".agents/skills", ".codex", ".harness/bin", ".harness/tests"):
+    for directory in (".agents/skills", ".codex", ".harness/bin", ".harness/tests", "prompts"):
         paths.extend(p for p in (SOURCE / directory).rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
-    for name in ("INTENT", "PLAN", "DECISIONS", "VERIFICATION", "COGNITION", "WORKLOG", "SETUP"):
+    for name in ("INTENT", "VERIFICATION", "WORKLOG", "SETUP"):
         paths.append(SOURCE / f"docs/{name}.md")
-    paths.append(SOURCE / "ctx/README.md")
     for source in paths:
         dest = target / source.relative_to(SOURCE)
         if dest.exists():
