@@ -188,6 +188,16 @@ class GitHooks(unittest.TestCase):
         r = self.git("merge", "--no-ff", "work", "-m", "merge: work → main")
         self.assertEqual(r.returncode, 0, r.stderr)
 
+    def test_verify_refs_must_name_each_ac(self):
+        """R-n 한 줄 PASS로 그 R의 미구현 AC까지 통과시키지 않는다."""
+        self.write("docs/INTENT.md", INTENT_TWO)
+        self.write("docs/ledger.jsonl", line(type="decision", id="D-1", refs=["R-1"], what="AC 승인",
+                                             why="원문 3줄", by="user"))
+        self.commit("docs(intent): 의도 계약 — P-1")
+        self.write("src.py", "x = 1\n")
+        self.write("docs/ledger.jsonl", verify("PASS", "R-1"), mode="a")
+        self.commit("feat(detect): 이상 탐지 — R-1", ok=False, expect="verify refs는 AC-n.m만")
+
     def test_merge_allows_ac_put_on_hold_by_user(self):
         """끝내지 못한 AC는 사용자 승인으로 보류하면 머지할 수 있다."""
         self.write("docs/INTENT.md", INTENT_TWO)
