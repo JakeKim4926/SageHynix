@@ -1,6 +1,6 @@
 # SageHynix — 해커톤용 Codex 하네스
 
-데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 5개(검증 + git + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
+데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 6개(의도 + 검증 + git + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅과 의도 추적 커밋 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
 
 ## 빠른 시작
 
@@ -22,8 +22,9 @@ cp -rn /tmp/h/AGENTS.md /tmp/h/.agents /tmp/h/.codex /tmp/h/prompts .
 
 ```text
 AGENTS.md          Codex 작업 규칙
-.agents/skills/     verify, git, fe-setup, fe-build, fe-design
+.agents/skills/     intent, verify, git, fe-setup, fe-build, fe-design
 .codex/            프로젝트 설정, 에이전트(researcher, verifier), 가드레일 훅, 규칙
+.codex/hooks/git/   의도 추적 커밋 훅(pre-commit, commit-msg → intent_trace.py)
 prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 ```
 
@@ -31,16 +32,17 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 
 ## 과제 시작
 
-1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 5개가 보이는지, 허용 모델인지 확인한다.
+1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 6개가 보이는지, 허용 모델인지, `git config core.hooksPath`가 `.codex/hooks/git`인지 확인한다(세션 시작 훅이 설정).
 2. `prompts/SCRIPT.md`의 빈 틀을 복사해 **실제 과제 지시서 경로**를 채우고 과제를 파악한다.
-3. 기능마다 `main`에서 작업 브랜치를 만들고, 구현 → `$verify` → 커밋을 반복한 뒤 로컬에서 `main`으로 머지한다(`$git`, push·PR 없음).
+3. `$intent`로 원문을 `docs/task/`에 반입하고 목적·요구사항·수용 기준(AC)을 계약으로 쓴 뒤 AC를 승인한다.
+4. 기능마다 `main`에서 작업 브랜치를 만들고, 구현 → `$verify` → 커밋을 반복한 뒤 로컬에서 `main`으로 머지한다(`$git`, push·PR 없음).
 
 | 쓰는 곳 | 형식 |
 |---|---|
 | 사람 → Codex, Codex → 서브에이전트, 세션 → 새 세션 | `prompts/SCRIPT.md` 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]` |
 | 업무 담당자(메신저) | 짧은 자연어 질문 + 선택지 |
 
-작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 요구사항·결정은 `docs/INTENT.md`, 조사는 `docs/research/<주제>.md`, 검증과 인수인계는 `docs/LOG.md`.
+작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 원문은 `docs/task/`, 목적·요구사항·AC는 `docs/INTENT.md`, 가정·질문·결정·검증·감사 이력은 `docs/ledger.jsonl`(추가만), 조사는 `docs/research/<주제>.md`, 인수인계는 `docs/LOG.md`. 추적표는 `python3 .codex/hooks/intent_trace.py report`, 훅 자체 테스트는 `python3 -m unittest discover -s .codex/hooks -p "test_*.py"`.
 
 플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결은 직접 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다.
 
