@@ -1,0 +1,4 @@
+#!/bin/sh
+# feat·fix 커밋의 R-n과 verify PASS 확인 (core.hooksPath=.codex/hooks/git). --no-verify 우회 금지.
+PY=python3; command -v python3 >/dev/null 2>&1 || PY=python
+exec "$PY" "$(git rev-parse --show-toplevel)/.codex/hooks/intent_trace.py" commit-msg "$1"
