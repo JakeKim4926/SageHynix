@@ -1,6 +1,6 @@
 # SageHynix — 해커톤용 Codex 하네스
 
-데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 6개(조사·검증·문서 + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
+데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 4개(검증 + FE 3개), 서브에이전트 2개, 6칸 지시 형식(SCRIPT), 가드레일 훅을 담은 프로젝트다. 180분 안에 쓸 수 있는 만큼만 남겼다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
 
 ## 빠른 시작
 
@@ -22,7 +22,7 @@ cp -rn /tmp/h/AGENTS.md /tmp/h/.agents /tmp/h/.codex /tmp/h/prompts .
 
 ```text
 AGENTS.md          Codex 작업 규칙
-.agents/skills/     research, verify, doc, fe-setup, fe-build, fe-design
+.agents/skills/     verify, fe-setup, fe-build, fe-design
 .codex/            프로젝트 설정, 에이전트(researcher, verifier), 가드레일 훅, 규칙
 prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 ```
@@ -31,15 +31,15 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 
 ## 과제 시작
 
-1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 6개가 보이는지, 허용 모델인지 확인한다.
-2. `prompts/SCRIPT.md`의 빈 틀을 복사해 **실제 과제 지시서 경로**를 채우고 `$research`로 과제를 파악한다.
+1. Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 4개가 보이는지, 허용 모델인지 확인한다.
+2. `prompts/SCRIPT.md`의 빈 틀을 복사해 **실제 과제 지시서 경로**를 채우고 과제를 파악한다.
 3. 구현 → `$verify` → 커밋을 기능마다 반복한다.
-4. `$doc`으로 제출 문서를 쓰고 감사한다.
+4. 제출 문서를 쓰고 코드·`docs/LOG.md`·git log와 대조 감사한다.
 
 | 쓰는 곳 | 형식 |
 |---|---|
 | 사람 → Codex, Codex → 서브에이전트, 세션 → 새 세션 | `prompts/SCRIPT.md` 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]` |
-| 업무 담당자(메신저) | 짧은 자연어 질문 + 선택지 (`$research`가 초안) |
+| 업무 담당자(메신저) | 짧은 자연어 질문 + 선택지 |
 
 작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 요구사항·결정은 `docs/INTENT.md`, 조사는 `docs/research/<주제>.md`, 검증과 인수인계는 `docs/LOG.md`.
 
