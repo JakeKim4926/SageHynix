@@ -50,7 +50,7 @@ AGENTS.md                 Codex 작업 규칙 및 시작 절차
 .harness/bin/              환경 점검, 검증
 .harness/tests/            하네스 자체 테스트 (과제 tests/와 분리)
 prompts/SCRIPT.md          6칸 지시 형식과 복사용 스크립트 S1~S6
-docs/                     INTENT, VERIFICATION, WORKLOG, research/
+docs/                     INTENT, LOG, research/ (+ 하네스 안내 SETUP, DESIGN)
 setup.sh                  현재 폴더 초기화·선택 설치·검증
 bootstrap.sh              기존 과제 폴더에 하네스 적용
 ```
@@ -69,7 +69,7 @@ bootstrap.sh              기존 과제 폴더에 하네스 적용
 | 사람 → Codex, Codex → 서브에이전트, 세션 → 새 세션 | `prompts/SCRIPT.md` 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]` |
 | 업무 담당자(메신저) | 짧은 자연어 질문 + 선택지 (`$research`가 초안) |
 
-작업 기억은 파일로만 남는다: 요구사항·결정은 `docs/INTENT.md`, 조사는 `docs/research/<주제>.md`, 검증은 `docs/VERIFICATION.md`, 인수인계는 `docs/WORKLOG.md`.
+작업 기억은 파일로만 남는다: 요구사항·결정은 `docs/INTENT.md`, 조사는 `docs/research/<주제>.md`, 검증과 인수인계는 `docs/LOG.md`.
 
 하네스의 정책 검사 통과와 Codex 내부에서 훅이 실제 실행되는 것은 별개다. 플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결을 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다.
 

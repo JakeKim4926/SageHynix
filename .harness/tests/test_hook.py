@@ -132,7 +132,7 @@ class PromptAndSession(Base):
 
     def test_session_resume_keeps_handoff(self):
         out = run_hook("session-start", {"source": "resume", "model": "gpt-6.1-sol", "cwd": str(self.ws)}, self.home)
-        self.assertIn("WORKLOG.md", out["hookSpecificOutput"]["additionalContext"])
+        self.assertIn("LOG.md", out["hookSpecificOutput"]["additionalContext"])
 
     def test_garbage_input_fails_open(self):
         env = {**os.environ, "HYNIX_HARNESS_HOME": str(self.home)}

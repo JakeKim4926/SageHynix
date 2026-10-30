@@ -58,7 +58,7 @@
 [Task] <기능>을 데이터→로직→출력(화면)까지 작동하게 만든다.
 [Rules] 범위 밖: <…>. 새 패키지는 설치 전 import 확인. 서버는 0.0.0.0. git push·외부 전송 금지. 애매하면 구현 전에 묻는다.
 [Output] 변경 파일 목록, 실행 명령, 결과 요약.
-[Done] $verify 통과 + docs/VERIFICATION.md에 행 추가 + 커밋.
+[Done] $verify 통과 + docs/LOG.md 검증 표에 행 추가 + 커밋.
 ```
 
 ### S4. 검증 위임 (Codex → verifier 서브에이전트)
@@ -74,7 +74,7 @@
 ### S5. 문서 작성·감사 (사람 → Codex, 감사는 Codex → verifier)
 ```
 [Role] 제출 문서 담당.
-[Context] 필수 산출물: docs/INTENT.md. 검증 기록: docs/VERIFICATION.md. 판단 근거: docs/research/*.md.
+[Context] 필수 산출물: docs/INTENT.md. 검증 기록: docs/LOG.md. 판단 근거: docs/research/*.md.
 [Task] $doc 으로 <문서명>을 작성한다 (또는: 제출 전 감사).
 [Rules] 과제 지정 양식 우선. 재현 명령 없는 수치 금지. 한계 섹션 필수. 과장 표현 금지.
 [Output] <파일 경로>. 채팅에는 바뀐 섹션 목록 (감사면 불일치 표).
@@ -84,7 +84,7 @@
 ### S6. 세션 인수인계 (세션 → 새 세션)
 ```
 [Role] 이전 세션의 작업을 이어받는 담당.
-[Context] 읽을 것: docs/WORKLOG.md, docs/INTENT.md, docs/VERIFICATION.md, git log --oneline -10. 현재 상태: <한 줄>. 막힌 것: <한 줄>.
+[Context] 읽을 것: docs/LOG.md, docs/INTENT.md, git log --oneline -10. 현재 상태: <한 줄>. 막힌 것: <한 줄>.
 [Task] <다음 할 일 하나>.
 [Rules] 이미 있는 docs/research 결과는 다시 조사하지 않는다. AGENTS.md 절대 규칙 유지.
 [Output] <…>

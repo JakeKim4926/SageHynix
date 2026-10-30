@@ -164,9 +164,9 @@ def handle_prompt(payload: dict) -> None:
 def handle_session_start(payload: dict) -> None:
     cwd = payload.get("cwd", "")
     lines = []
-    worklog = workspace_root(cwd) / "docs" / "WORKLOG.md"
+    worklog = workspace_root(cwd) / "docs" / "LOG.md"
     if payload.get("source") in ("resume", "compact", "clear", "fork") or (worklog.exists() and worklog.stat().st_size > 400):
-        lines.append("[harness] 이어서 작업 중이면 먼저 docs/WORKLOG.md 의 '현재 상태/다음 단계'를 읽고 시작할 것.")
+        lines.append("[harness] 이어서 작업 중이면 먼저 docs/LOG.md 의 '현재 상태'를 읽고 시작할 것.")
     model = str(payload.get("model") or "")
     if "astra" in model.lower():
         lines.append(f"[harness] ⚠ 현재 모델 '{model}'은 Astra 계열(사용 제한). /model 로 변경 필요.")

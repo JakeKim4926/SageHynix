@@ -25,7 +25,7 @@ def main():
     paths = [SOURCE / "AGENTS.md", SOURCE / "setup.sh"]
     for directory in (".agents/skills", ".codex", ".harness/bin", ".harness/tests", "prompts"):
         paths.extend(p for p in (SOURCE / directory).rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
-    for name in ("INTENT", "VERIFICATION", "WORKLOG", "SETUP"):
+    for name in ("INTENT", "LOG", "SETUP"):
         paths.append(SOURCE / f"docs/{name}.md")
     for source in paths:
         dest = target / source.relative_to(SOURCE)

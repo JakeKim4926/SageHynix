@@ -1,6 +1,6 @@
 ---
 name: doc
-description: 제출 문서(계획서, 협업 기록, 결과 보고서, README 실행 방법 등)를 작성·수정하고, 제출 전에 문서 주장과 실제 코드·실행 결과·git log를 대조 감사하며, 세션 인수인계용 docs/WORKLOG.md를 갱신한다. 과제가 지정한 파일명·양식을 우선한다. "문서 써줘/고쳐줘/점검해줘/인수인계" 요청 시 사용.
+description: 제출 문서(계획서, 협업 기록, 결과 보고서, README 실행 방법 등)를 작성·수정하고, 제출 전에 문서 주장과 실제 코드·실행 결과·git log를 대조 감사하며, 세션 인수인계용 docs/LOG.md 현재 상태를 갱신한다. 과제가 지정한 파일명·양식을 우선한다. "문서 써줘/고쳐줘/점검해줘/인수인계" 요청 시 사용.
 ---
 
 # Doc
@@ -10,11 +10,11 @@ description: 제출 문서(계획서, 협업 기록, 결과 보고서, README �
 ## 0. 무엇을 쓰나
 - 과제 README가 파일명·양식을 지정했으면 **그것만** 따른다(`docs/INTENT.md`의 필수 산출물 표).
 - 지정이 없으면 [templates.md](references/templates.md)의 기본 세트. 무엇을 만들지 사용자에게 한 줄로 확인한다.
-- 원천: `docs/INTENT.md`(요구사항·결정), `docs/research/*.md`(판단 근거), `docs/VERIFICATION.md`(검증), `git log`, `.harness/log/prompts.jsonl`(AI 협업 기록).
+- 원천: `docs/INTENT.md`(요구사항·결정), `docs/research/*.md`(판단 근거), `docs/LOG.md`(검증), `git log`, `.harness/log/prompts.jsonl`(AI 협업 기록).
 
 ## 1. 작성
 - 사실 문장마다 출처: `(R-2)`, `(D-1)`, `docs/research/data-sensor.md`, `src/metrics.py:compute_yield`, 커밋 해시.
-- 수치는 VERIFICATION.md에 재현 명령이 있는 것만. 없으면 먼저 `$verify`.
+- 수치는 LOG.md 검증 표에 재현 명령이 있는 것만. 없으면 먼저 `$verify`.
 - **한계 섹션 필수**: 미검증, 가정(A-n), 데이터 한계, 시간 때문에 뺀 범위.
 - **AI 활용**: 무엇을 맡겼고, 어떻게 검증했고, 어디서 AI 결과를 고쳤는지 구체 사례 2~3개.
 - 짧게, 표 우선. "완벽/모든/최적/보장" 금지. 문서에 쓴 실행 명령은 한 번 실제로 실행한다.
@@ -26,8 +26,8 @@ description: 제출 문서(계획서, 협업 기록, 결과 보고서, README �
 ## 3. 감사 (제출 20~30분 전, 항목마다 실제 확인 후 표로)
 1. 필수 산출물: INTENT 표 vs `git ls-files` — 경로·철자, 빈 파일 없음
 2. `git status --porcelain` 비었나. 에디터 "저장됨"은 사용자에게 확인 요청
-3. 주장-근거: 문서의 수치·"완료"·"검증" 문장 → VERIFICATION/코드와 대조. 불일치는 `문서:줄 → 실제 → 수정 문구`
-4. R-n마다 코드 위치와 VERIFICATION 행이 있나. 끊긴 것은 문서에 "구현/검증 안 됨"으로
+3. 주장-근거: 문서의 수치·"완료"·"검증" 문장 → LOG 검증 표/코드와 대조. 불일치는 `문서:줄 → 실제 → 수정 문구`
+4. R-n마다 코드 위치와 LOG 검증 행이 있나. 끊긴 것은 문서에 "구현/검증 안 됨"으로
 5. README 실행 명령 재현(서버면 띄우고 curl 후 종료)
 6. 민감 정보: `rg -n -i "api[_-]?key|token|secret|password"`
 
@@ -35,7 +35,7 @@ description: 제출 문서(계획서, 협업 기록, 결과 보고서, README �
 
 ## 4. 인수인계 (긴 작업 전, 세션 교체 전, 약 30분마다)
 1. 사실 수집(직접 실행): `git log --oneline -10`, `git status --short`, `tail -5 .harness/log/verify.log`.
-2. `docs/WORKLOG.md` 갱신 — 현재 상태(완료 커밋, 진행 중 파일:함수) / 다음 단계 3~5개 / 막힌 것·결정 필요 / 띄워 둔 서버(포트, 터미널 탭). 한 화면을 넘기지 않는다. 확인 못 한 것은 "미확인".
+2. `docs/LOG.md`의 현재 상태 갱신 — 완료 커밋, 진행 중 파일:함수, 다음 단계 3~5개, 막힌 것·결정 필요, 띄워 둔 서버(포트, 터미널 탭). 한 화면을 넘기지 않는다. 확인 못 한 것은 "미확인".
 3. 새 세션에 붙여 넣을 지시는 `prompts/SCRIPT.md`의 S6 형식으로 함께 준다.
 
 ## 커밋

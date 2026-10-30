@@ -114,4 +114,4 @@ bash .harness/tests/run_all.sh
 
 `package.json`이 루트 또는 `frontend/`에 있으면 자동 점검은 Node/npm의 실제 실행도 확인한다. 다른 앱 경로와 pnpm/yarn은 `$fe-setup`에서 프로젝트에 맞게 직접 확인한다. 이 점검만으로 패키지 버전 호환성·브라우저 실행·미리보기 연결까지 검증되는 것은 아니다.
 
-`$fe-setup`에서 lockfile과 런타임을 확인한 뒤 필요한 의존성만 설치한다. 신규 앱의 3000 포트 바인딩과 실제 IDE 미리보기를 확인하고 실행 명령을 기록한다. 앱 검증 명령은 `.harness/verify.local.sh`에 연결하거나 직접 실행해 `docs/VERIFICATION.md`에 남긴다. FE 문서만 변경한 경우 실제 앱 검증을 통과했다고 보고하지 않는다.
+`$fe-setup`에서 lockfile과 런타임을 확인한 뒤 필요한 의존성만 설치한다. 신규 앱의 3000 포트 바인딩과 실제 IDE 미리보기를 확인하고 실행 명령을 기록한다. 앱 검증 명령은 `.harness/verify.local.sh`에 연결하거나 직접 실행해 `docs/LOG.md`에 남긴다. FE 문서만 변경한 경우 실제 앱 검증을 통과했다고 보고하지 않는다.
