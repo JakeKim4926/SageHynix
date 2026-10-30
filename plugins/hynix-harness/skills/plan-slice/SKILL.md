@@ -6,13 +6,13 @@ description: INTENT의 요구사항을 우선순위·시간 예산에 맞춰 수
 # Plan in Slices
 
 ## 절차
-1. 입력 확인: `docs/INTENT.md`(R/A/Q), `docs/research/SYNTHESIS.md`(있으면), `clock.sh status`의 남은 시간.
+1. 입력 확인: `docs/INTENT.md`(R/A/Q), `ctx/INDEX.md`의 valid 항목(특히 `research/synthesis`, `decision/*` — `ctx.py get`으로 읽기), `clock.sh status`의 남은 시간.
 2. **첫 슬라이스는 가장 얇은 종단 간(end-to-end) 경로**: 실제 데이터 로딩 → 핵심 계산 1개 → 결과 출력(화면 또는 파일). 이게 돌면 이후는 확장이다.
 3. 슬라이스 표 작성(PLAN.md): 충족 요구사항 ID, 수용 기준, 검증 방법(테스트/명령/화면 확인), 예상 시간(분).
    - 슬라이스 하나는 15~30분. 넘으면 쪼갠다.
    - Must 요구사항이 모두 들어간 슬라이스 합계가 남은 Build 시간의 70%를 넘지 않게(검증·문서 여유).
 4. **범위 밖** 목록을 명시한다. 하지 않기로 한 것도 의도의 일부다.
-5. 선택지가 있던 판단(방법, 라이브러리, 화면 형태)은 `docs/DECISIONS.md`에 D-n으로 남긴다.
+5. 선택지가 있던 판단(방법, 라이브러리, 화면 형태)은 `ctx.py new decision <주제> --uses <근거 ctx ID>`로 비교·근거 대조를 남기고, `docs/DECISIONS.md`에는 D-n 요약과 그 ID를 적는다.
 6. 병렬 가능한 슬라이스(파일이 겹치지 않음)가 2개 이상이면 `$worktree-lanes`를 제안한다.
 7. 사용자에게 계획 요약과 함께 **승인 요청**. 승인 후 구현 시작.
 

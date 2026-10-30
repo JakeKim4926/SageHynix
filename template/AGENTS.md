@@ -35,8 +35,8 @@ Intake → Research → Plan → [Slice: 구현 → 검증 → 커밋 → 설명
 
 | 구간 | 단계 | 산출물 |
 |---|---|---|
-| 0–20분 | Intake: README 정독, 업무 담당자 질의 | `docs/INTENT.md` |
-| 20–35분 | Research(병렬) + Plan | `docs/research/*`, `docs/PLAN.md` |
+| 0–20분 | Intake: README 정독, 업무 담당자 질의 | `docs/INTENT.md`, `ctx/note/*` |
+| 20–35분 | Research(병렬) + Plan | `ctx/research/*`, `ctx/data/*`, `docs/PLAN.md` |
 | 35–130분 | Build: 슬라이스 반복 | 코드, 테스트, 커밋 |
 | 130–155분 | Harden + 문서 | `docs/VERIFICATION.md`, 제출 문서 |
 | 155–170분 | Defense 준비, 최종 문서 감사 | `docs/COGNITION.md` |
@@ -60,29 +60,40 @@ Intake → Research → Plan → [Slice: 구현 → 검증 → 커밋 → 설명
 | 슬라이스 후 사람의 이해 점검 | `$cognition-check` |
 | 제출 15분 전, 후속 서술형 대비 | `$defense-prep` |
 | 세션 인수인계 / 컨텍스트 정리 | `$handoff` |
+| 조사·분석 전 기존 결과 찾기, 결과 남기기, 이어받기 | `$ctx` |
 
 ## 5. 서브에이전트 (병렬 조사)
 
 `.codex/agents/`에 정의: `data_profiler`, `domain_researcher`, `method_scout`, `risk_reviewer`, `verifier`, `doc_auditor`.
 - **서로 독립인 질문만** 병렬로 보낸다. 결과에 의존하는 일은 순차로.
-- 각 에이전트는 `docs/research/<lane>.md` 한 파일에만 쓴다. 코드 수정 금지.
+- 띄우기 전에 레인마다 `ctx.py new research <lane> --q …`로 등록한다. 각 에이전트는 `ctx/research/<lane>/report.md` 한 파일에만 쓴다. 코드 수정 금지. 끝나면 `ctx.py done`.
 - 토큰 사용량도 평가 신호다. 한 번에 최대 4개, 기본 reasoning effort는 medium.
-- 결과는 메인 에이전트가 `docs/research/SYNTHESIS.md`로 종합하고, 서로 충돌하는 주장은 충돌로 표시한다.
+- 결과는 메인 에이전트가 `ctx/research/synthesis`(`--uses` 각 레인)로 종합하고, 서로 충돌하는 주장은 충돌로 표시한다.
 
-## 6. 기술 기본값 (Python 중심)
+## 6. 작업 기억 — `ctx/` (세션 사이로 넘어가는 유일한 기억)
+
+대화는 잊혀도 `ctx/`는 남는다. 다음 세션·레인은 대화 기록이 아니라 `ctx/`의 결론과 근거 위치를 읽고 이어간다.
+1. **먼저 찾는다.** 조사·데이터 분석·담당자 질문·프롬프트 작성 전에 `python3 .harness/bin/ctx.py find <키워드>`.
+   `valid`면 `ctx.py get <ID>`로 읽고 재사용한다 — **같은 조사·같은 질문을 다시 하지 않는다.** `stale`이면 그대로 근거로 쓰지 않는다.
+2. **결과는 남긴다.** `ctx.py new <종류> <slug> --q "<무엇을 묻는지>" [--serves R-n] [--inputs 파일] [--uses ID]` → 템플릿 섹션 채우기 → `ctx.py done <ID>`.
+3. `ctx/index.jsonl`은 직접 고치지 않는다(훅이 막음). 목록은 `ctx/INDEX.md`, 사용법은 `$ctx`, 폴더 구성은 `ctx/README.md`.
+4. 사용자가 `@ctx/…`나 ctx ID를 주면 그 항목부터 읽고, 폴더 전체를 읽지 않는다.
+5. `docs/` 제출 문서는 근거로 ctx ID를 인용한다(예: D-2 근거 `decision/model-choice`).
+
+## 7. 기술 기본값 (Python 중심)
 
 - 분석: pandas / numpy. 웹: 요구가 대시보드면 Streamlit, API·커스텀 화면이면 FastAPI(+간단한 HTML). 과제 README가 다르면 README를 따른다.
 - 설치 전 `python3 -c "import pandas"`처럼 이미 있는지 먼저 확인한다. 의존성은 `requirements.txt`에 기록.
 - 숫자 결과(지표, 집계)는 **재현 명령**과 함께 남긴다. 무작위성이 있으면 seed 고정.
 - 테스트는 `tests/`에 pytest로. 최소한 핵심 계산 함수와 데이터 로딩 경계값을 테스트한다.
 
-## 7. 커밋 규칙 (git log도 평가 대상)
+## 8. 커밋 규칙 (git log도 평가 대상)
 
 - 슬라이스·의미 단위로 커밋. 메시지: `<type>(<scope>): <무엇을> — <왜>` (예: `feat(etl): 결측 웨이퍼 ID 제거 — R-2 수율 계산 왜곡 방지`)
 - 요구사항 ID(R-n)와 결정 ID(D-n)를 메시지에 연결한다.
 - `git reset --hard`, 히스토리 재작성, 제출 직전 결과물 통째 교체 금지.
 
-## 8. 보고 형식 (매 턴 끝)
+## 9. 보고 형식 (매 턴 끝)
 
 ```
 한 일: …

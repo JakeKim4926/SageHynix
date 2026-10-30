@@ -42,16 +42,24 @@ else
 fi
 
 # 2) Codex project layer, harness scripts, doc skeleton.
-for d in .codex .harness docs; do copy_tree "$HARNESS/template/$d" "$WS/$d"; done
+for d in .codex .harness docs ctx; do copy_tree "$HARNESS/template/$d" "$WS/$d"; done
 
 # 3) Skills (single source: plugins/hynix-harness/skills) -> repo-scoped skills.
 copy_tree "$HARNESS/plugins/hynix-harness/skills" "$WS/.agents/skills"
 
-chmod +x "$WS"/.harness/bin/*.sh "$WS"/.codex/hooks/*.py "$WS"/.agents/skills/*/scripts/*.py 2>/dev/null || true
+chmod +x "$WS"/.harness/bin/*.sh "$WS"/.harness/bin/*.py "$WS"/.codex/hooks/*.py "$WS"/.agents/skills/*/scripts/*.py 2>/dev/null || true
 
 # 4) Keep logs out of git (they are still files in the workspace).
 touch "$WS/.gitignore"
 grep -qxF '.harness/log/' "$WS/.gitignore" || printf '\n# harness runtime logs\n.harness/log/\n__pycache__/\n' >> "$WS/.gitignore"
+
+# 4b) ctx/ work memory: INDEX.md is regenerated from index.jsonl, and the append-only
+#     event log merges as a union so worktree lanes never conflict on it.
+grep -qxF 'ctx/INDEX.md' "$WS/.gitignore" || printf 'ctx/INDEX.md\nctx/.INDEX.*.tmp\n' >> "$WS/.gitignore"
+touch "$WS/.gitattributes"
+grep -qxF 'ctx/index.jsonl merge=union' "$WS/.gitattributes" || printf 'ctx/index.jsonl merge=union\n' >> "$WS/.gitattributes"
+PY="$(command -v python3 || command -v python)"
+CTX_ROOT="$WS" "$PY" "$WS/.harness/bin/ctx.py" init >/dev/null
 
 # 5) Shared state for hooks/clock across terminals and worktrees.
 mkdir -p "$STATE"; printf '%s\n' "$WS" > "$STATE/workspace"
@@ -63,10 +71,10 @@ if (( COMMIT )); then
   idargs=()
   git config user.name  >/dev/null || idargs+=(-c "user.name=candidate")
   git config user.email >/dev/null || idargs+=(-c "user.email=candidate@localhost")
-  paths=(); for p in AGENTS.md AGENTS.harness.md .gitignore .codex .harness .agents docs; do [[ -e "$p" ]] && paths+=("$p"); done
+  paths=(); for p in AGENTS.md AGENTS.harness.md .gitignore .gitattributes .codex .harness .agents docs ctx; do [[ -e "$p" ]] && paths+=("$p"); done
   git add -- "${paths[@]}"
   if ! git diff --cached --quiet; then
-    git ${idargs[@]+"${idargs[@]}"} commit -q -m "chore(harness): install hynix harness (AGENTS.md, skills, subagents, hooks, rules)"
+    git ${idargs[@]+"${idargs[@]}"} commit -q -m "chore(harness): install hynix harness (AGENTS.md, skills, subagents, hooks, rules, ctx)"
     say "커밋: $(git log --oneline -1)"
   fi
 fi

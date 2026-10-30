@@ -8,6 +8,7 @@
 | 기술 | Technique: 작동하고 검증되는가 | `verify-gate` skill, `verify.sh`, `verifier` 에이전트, 슬라이스 단위 커밋 규칙 |
 | 의도 | Intent: 목표·제약을 정확히 전달·반영했나 | `task-intake`, `stakeholder-sync`, `plan-slice`, `docs/INTENT.md`(R/A/Q ID 추적) |
 | 인지 | Cognition: 사람이 설명할 수 있나 | `cognition-check`, `defense-prep`, `handoff`, `docs/COGNITION.md` |
+| (모델의) 맥락 유실 | 세 축 모두 | `ctx/` 작업 기억 + `$ctx` skill + 훅 자동 주입 (아래) |
 
 설계 근거와 출처는 [docs/DESIGN.md](docs/DESIGN.md).
 
@@ -23,22 +24,46 @@ template/                         작업 공간에 복사되는 것
   .codex/agents/*.toml            서브에이전트 6종: data_profiler, domain_researcher, method_scout,
                                   risk_reviewer, verifier, doc_auditor (모두 코드 수정 금지)
   .harness/bin/                   clock.sh(타이머) wt.sh(워크트리) fanout.sh(병렬 조사)
-                                  verify.sh(검증 관문) doctor.sh(자가 진단)
-  docs/                           INTENT, PLAN, DECISIONS, WORKLOG, VERIFICATION, COGNITION, research/
-plugins/hynix-harness/            Codex 플러그인 (skill 12개의 단일 원본)
+                                  verify.sh(검증 관문) doctor.sh(자가 진단) ctx.py(작업 기억 CLI)
+  docs/                           제출용: INTENT, PLAN, DECISIONS, WORKLOG, VERIFICATION, COGNITION
+  ctx/                            작업 기억: research/ data/ decision/ slice/ prompt/ session/ note/
+plugins/hynix-harness/            Codex 플러그인 (skill 13개의 단일 원본)
   skills/                         task-intake, stakeholder-sync, parallel-research, data-profile,
                                   plan-slice, worktree-lanes, verify-gate, doc-writer, doc-review,
-                                  cognition-check, defense-prep, handoff
+                                  cognition-check, defense-prep, handoff, ctx
 .agents/plugins/marketplace.json  `codex plugin marketplace add`용
 tests/                            하네스 자체 테스트
 ```
+
+## 작업 기억 `ctx/` — 재조사·같은 질문 반복 방지
+
+세션 사이로 넘어가는 건 파일뿐이다. 조사·분석·결정을 한 번 하면 `ctx/<종류>/<주제>/`에 남기고, 다음 세션은 대화가 아니라 그 결론과 근거 위치를 읽고 이어간다.
+
+```
+ctx/
+  INDEX.md        항목당 한 줄 (ID · 상태 · 한 줄 요약) — 자동 생성, 이것만 항상 읽는다
+  index.jsonl     메타데이터 원장 (덧붙이기만, ctx.py만 씀, 레인 병합 시 union)
+  research/<주제>/  brief.md 지시서 · report.md (결론·근거·미확인)
+  data/<데이터셋>/  profile.md · notes.md
+  decision/ slice/ prompt/ session/ note/
+```
+
+| 장치 | 동작 |
+|---|---|
+| `ctx.py find` → `get` | 작업 전 검색. `valid`면 재사용, 같은 조사를 다시 하지 않는다 |
+| `ctx.py new` → 본문 → `done` | 종류별 템플릿 생성. 필수 섹션이 비면 `done` 거부. 요약 섹션 첫 줄이 INDEX 한 줄 |
+| 신선도 | `--inputs` 파일(데이터 등)이 바뀌거나 `--uses` 항목이 다시 작성되면 자동 `stale` |
+| 훅 | SessionStart(시작·재개·압축 직후)에 목록 주입, 매 프롬프트에 관련 항목 최대 3줄 주입, `index.jsonl` 직접 수정 차단 |
+| `fanout.sh` | 레인 = `research/<name>` 항목. valid 레인은 건너뛰고 나머지만 실행 후 `done` 검증 |
+
+사람은 `@ctx/research/anomaly/report.md`처럼 참조만 하면 된다. 모델이 바뀐 세션에서도 같은 파일을 읽는다.
 
 ## 가드레일
 
 | 장치 | 동작 |
 |---|---|
 | UserPromptSubmit 훅 | 모델이 Astra 계열이면 프롬프트 차단. 매 프롬프트에 `경과 N분 / 남은 M분 · 현재 단계` 주입. 프롬프트를 `.harness/log/prompts.jsonl`에 기록(협업 기록 원천) |
-| SessionStart 훅 | 타이머 상태, 재개 시 `docs/WORKLOG.md` 먼저 읽으라는 지시 주입 |
+| SessionStart 훅 | 타이머 상태, 재개 시 `docs/WORKLOG.md` 먼저 읽으라는 지시, `ctx/` 항목 목록 주입 |
 | PreToolUse 훅 | 차단: `git push`, 외부 호스트로 업로드/POST, scp·ssh·nc, 키·토큰·env 출력, `~/.codex/config.toml` 수정, 하네스 훅·규칙 자기수정, 감독·플랫폼 프로세스 kill, `rm -rf /·~·.·.git`, `git reset --hard`·`clean -f`·`rebase`. 허용: localhost POST, 공개 저장소 clone, pip install 등. 차단 내역은 `.harness/log/guard.jsonl` |
 | execpolicy rules | 위 정책 일부를 Codex 규칙 계층에서 이중으로 적용 |
 
@@ -49,7 +74,7 @@ tests/                            하네스 자체 테스트
 2. 허용되면 설치(아래) → `.harness/bin/doctor.sh`에서 FAIL 없음 확인
 3. `codex` 실행 → 폴더 신뢰 승인 → **`/hooks`에서 하네스 훅 3개 신뢰** → `/status`로 모델 확인
 4. 아무 프롬프트나 보내서 응답 컨텍스트에 `[harness] 경과…`가 반영되는지, `git push` 요청이 `[harness guard]`로 막히는지 확인
-5. `/skills`에 12개가 보이는지, "data_profiler와 method_scout를 병렬로 띄워서 README를 요약해" 같은 요청으로 서브에이전트가 뜨는지 확인 (안 뜨면 `fanout.sh` 사용)
+5. `/skills`에 13개가 보이는지, "data_profiler와 method_scout를 병렬로 띄워서 README를 요약해" 같은 요청으로 서브에이전트가 뜨는지 확인 (안 뜨면 `fanout.sh` 사용)
 6. 간단한 서버를 `0.0.0.0`으로 띄워 Browser 탭 연결 확인
 
 ### 설치 (작업 공간 터미널)
@@ -65,8 +90,8 @@ bash ~/harness/bootstrap.sh ~/workspace
 |---|---|---|
 | 0분 | 타이머 시작 | `.harness/bin/clock.sh start` |
 | 0–20 | 과제 파악, 담당자 질문 | `$task-intake` → 질문을 업무 담당자 메신저로 전송 → 답을 붙여 넣고 `$stakeholder-sync` |
-| 20–35 | 병렬 조사, 계획 | `$data-profile`, `$parallel-research`, `$plan-slice` |
-| 35–130 | 슬라이스 반복 | 구현 → `$verify-gate` → `$cognition-check` (30분마다 `$handoff`) |
+| 20–35 | 병렬 조사, 계획 | `$data-profile`, `$parallel-research`, `$plan-slice` (모두 결과를 `ctx/`에) |
+| 35–130 | 슬라이스 반복 | 구현 → `$verify-gate` → `$cognition-check` (30분마다 `$handoff`). 새 세션은 `@ctx/INDEX.md` 참조로 시작 |
 | 130–155 | 보강, 문서 | `$doc-writer` |
 | 155–170 | 감사, 서술형 대비 | `$doc-review`, `$defense-prep` |
 | 170 | 제출 시작 | 저장 상태·필수 파일 확인 후 "제출하고 문제풀기" |
@@ -85,7 +110,8 @@ codex plugin add hynix-harness@sagehynix
 bash tests/run_all.sh
 ```
 
-## 검증 현황 (2026-10-29, Windows 10 + Codex CLI 0.125/0.165 로컬)
-- 확인됨: 훅 정책 단위 테스트(차단 27건·허용 14건 등 11개 테스트), execpolicy 규칙 판정, bootstrap 설치·재실행 멱등성·기존 AGENTS.md 보존, `codex debug prompt-input`으로 AGENTS.md와 skill 12개 주입, `wt.sh` 레인 생성→병합→삭제, `fanout.sh` 2개 레인 병렬 실행·파일 출력, 프로파일러(pandas 3.1 / 표준 라이브러리), 플러그인 marketplace add → plugin add(skill 12개 설치).
-- **미확인**: (1) Codex 안에서 훅이 실제로 발동하는지 — 훅 신뢰는 `/hooks` 대화형 승인이 필요해 로컬 비대화형 실행에서 확인 못 함. (2) `.codex/agents/` 커스텀 에이전트가 spawn 도구에 노출되는지 — `codex exec`에서는 보이지 않았음(TUI에서는 미확인). (3) `fanout.sh` 레인 안에서의 파일 읽기 — 로컬 Windows 샌드박스 ACL 오류로 실패, 시험 환경(Linux)에서는 미확인. 셋 다 사전 체험 4·5번에서 확인할 것.
+## 검증 현황 (2026-10-29~30, Windows 10 + Codex CLI 0.125/0.165 로컬)
+- 확인됨 (ctx, 2026-10-30): `ctx.py` 단위 테스트 16개(템플릿 그대로면 done 거부, 요약 자동 추출, valid 재작성 거부·--redo, 한국어 조사 붙은 검색, 입력 변경·의존 항목 재작성 시 stale, 손상 행 무시, 훅의 목록·관련 항목 주입과 index.jsonl 직접 수정 차단), bootstrap 설치(ctx 커밋, INDEX.md 생성·ignore, union merge 속성), 가짜 codex로 `fanout.sh` 재실행 시 valid 레인 건너뜀, worktree 레인 2개가 각자 기록한 뒤 병합해도 충돌 없이 둘 다 valid. **미확인**: 실제 Codex 세션에서 훅 주입이 모델 행동(재조사 생략)을 바꾸는지 — 훅 신뢰 문제로 로컬 확인 불가, 사전 체험에서 확인.
+- 확인됨 (2026-10-29, ctx 추가 전 — skill 수는 당시 12개): 훅 정책 단위 테스트(차단 27건·허용 14건 등 11개 테스트), execpolicy 규칙 판정, bootstrap 설치·재실행 멱등성·기존 AGENTS.md 보존, `codex debug prompt-input`으로 AGENTS.md와 skill 12개 주입, `wt.sh` 레인 생성→병합→삭제, `fanout.sh` 2개 레인 병렬 실행·파일 출력, 프로파일러(pandas 3.1 / 표준 라이브러리), 플러그인 marketplace add → plugin add(skill 12개 설치).
+- **미확인**: (1) Codex 안에서 훅이 실제로 발동하는지(ctx 주입 포함) — 훅 신뢰는 `/hooks` 대화형 승인이 필요해 로컬 비대화형 실행에서 확인 못 함. (2) `.codex/agents/` 커스텀 에이전트가 spawn 도구에 노출되는지 — `codex exec`에서는 보이지 않았음(TUI에서는 미확인). (3) `fanout.sh` 레인 안에서의 파일 읽기 — 로컬 Windows 샌드박스 ACL 오류로 실패, 시험 환경(Linux)에서는 미확인. 셋 다 사전 체험 4·5번에서 확인할 것.
 - 시험 환경의 Codex 버전, python3/pandas 설치 여부는 알 수 없다(`doctor.sh`로 확인).

@@ -38,6 +38,8 @@ case "$cmd" in
       echo "레인 $lane 에 커밋 안 된 변경이 있습니다."; exit 1
     fi
     git -C "$root" merge --no-ff "lane/$lane" -m "merge(lane): $lane"
+    # ctx/index.jsonl merges as a union of both sides' events; rebuild the generated INDEX.md.
+    if [[ -f "$root/.harness/bin/ctx.py" ]]; then "$(command -v python3 || command -v python)" "$root/.harness/bin/ctx.py" check || true; fi
     echo "병합 완료. 테스트 재실행: .harness/bin/verify.sh"
     ;;
   rm)

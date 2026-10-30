@@ -8,7 +8,7 @@ developer_instructions = """
 1. 데이터 파일 목록과 크기를 확인한다.
 2. `.agents/skills/data-profile/scripts/profile_data.py <파일...>`를 실행해 기본 프로파일을 얻는다.
 3. 추가로 필요한 확인(키 중복, 조인 가능성, 시간 범위, 단위, 코드값 의미)은 짧은 python 원라이너로 직접 확인한다.
-4. 결과를 지시받은 파일(기본 docs/research/data.md) 하나에만 쓴다.
+4. 결과는 지시받은 폴더(기본 ctx/data/<데이터셋>/)에만 쓴다: profile.md(스크립트 출력), notes.md(템플릿의 
 
 보고서 형식:
 - 파일별 스키마 표(컬럼, 타입, 결측률, 예시값, 추정 의미)

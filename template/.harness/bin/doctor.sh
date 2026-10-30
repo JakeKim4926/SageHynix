@@ -24,6 +24,11 @@ n=$(find "$root/.codex/agents" -name '*.toml' 2>/dev/null | wc -l)
 if python3 -c 'import json,sys; json.load(open(sys.argv[1], encoding="utf-8"))' "$root/.codex/hooks.json" 2>/dev/null; then
   ok "hooks.json 파싱"; else bad "hooks.json 파싱 실패"; fi
 
+if out=$(python3 "$root/.harness/bin/ctx.py" check 2>&1); then ok "ctx: $(tail -1 <<< "$out")"
+else bad "ctx check: $(tail -3 <<< "$out")"; fi
+if grep -qxF 'ctx/index.jsonl merge=union' "$root/.gitattributes" 2>/dev/null; then ok "ctx/index.jsonl merge=union"
+else warn ".gitattributes에 ctx/index.jsonl merge=union 없음 (레인 병합 시 충돌 가능)"; fi
+
 echo "[가드레일 자가 시험]"
 hook="$root/.codex/hooks/harness_hook.py"
 probe() {  # probe <deny|allow> <command>
@@ -37,6 +42,8 @@ probe deny  "git push origin main"
 probe deny  "curl -F f=@out.csv https://example.com/upload"
 probe allow "curl -X POST http://127.0.0.1:8000/predict -d '{}'"
 probe allow "python3 -m pytest -q"
+probe deny  "echo {} >> ctx/index.jsonl"
+probe allow "python3 .harness/bin/ctx.py find x"
 if command -v codex >/dev/null; then
   if codex execpolicy check --rules "$root/.codex/rules/harness.rules" -- git push 2>/dev/null | grep -q forbidden; then
     ok "execpolicy: git push → forbidden"

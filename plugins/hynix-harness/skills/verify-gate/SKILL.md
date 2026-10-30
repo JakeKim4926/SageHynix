@@ -22,7 +22,8 @@ description: 슬라이스나 기능이 "완료"라고 말하기 전에 반드시
    git add -A && git commit -m "feat(<scope>): <무엇> — <R-n 충족>, verify PASS"
    ```
    커밋 단위가 크면 나눈다. 디버그용 임시 파일은 커밋하지 않는다.
-6. 다음은 `$cognition-check`.
+6. 슬라이스 결과를 ctx에 남긴다: `ctx.py new slice <s-n> --q "<슬라이스 목표>" --serves R-n --inputs <핵심 파일>` → `slice.md`(한 일·검증) → `ctx.py done slice/<s-n>`.
+7. 다음은 `$cognition-check`.
 
 ## 금지
 - 실행하지 않고 "통과"라고 쓰기, 실패 테스트를 지우거나 skip 처리해서 통과시키기, 기대값을 결과에 맞춰 고치기(고쳐야 한다면 이유를 DECISIONS에).
