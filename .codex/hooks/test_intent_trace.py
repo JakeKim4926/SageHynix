@@ -100,13 +100,24 @@ class GitHooks(unittest.TestCase):
         self.contract()
         self.write("src.py", "x = 1\n")
         self.commit("feat(detect): 이상 탐지", ok=False, expect="R-n 필요")
-        self.commit("feat(detect): 이상 탐지 — R-1", ok=False, expect="R-1: 스테이징된 docs/ledger.jsonl에 verify PASS 없음")
+        self.commit("feat(detect): 이상 탐지 — R-1", ok=False, expect="R-1: 스테이징된 docs/ledger.jsonl에 이번 커밋에서 추가한 verify PASS 없음")
         self.write("docs/ledger.jsonl", line(type="verify", refs=["AC-1.1"], result="PASS", line="PASS 탐지(R-1)"), mode="a")
         self.commit("feat(detect): 이상 탐지 — R-1")
         self.write("src.py", "x = 2\n")
         self.write("docs/ledger.jsonl", line(type="verify", refs=["AC-1.1"], result="FAIL", line="FAIL 탐지(R-1)"), mode="a")
         self.commit("fix(detect): 임계값 — R-1", ok=False, expect="최신 FAIL: AC-1.1")
         self.commit("test(detect): 경계값 추가")  # feat·fix만 검사
+
+    def test_fix_needs_pass_added_in_this_commit(self):
+        """이전 커밋의 PASS로는 새 feat·fix를 통과시키지 않는다."""
+        self.contract()
+        self.write("src.py", "x = 1\n")
+        self.write("docs/ledger.jsonl", line(type="verify", refs=["AC-1.1"], result="PASS", line="PASS 탐지(R-1)"), mode="a")
+        self.commit("feat(detect): 이상 탐지 — R-1")
+        self.write("src.py", "x = 2\n")
+        self.commit("fix(detect): 임계값 — R-1", ok=False, expect="R-1: 스테이징된 docs/ledger.jsonl에 이번 커밋에서 추가한 verify PASS 없음")
+        self.write("docs/ledger.jsonl", line(type="verify", refs=["AC-1.1"], result="PASS", line="PASS 임계값(R-1)"), mode="a")
+        self.commit("fix(detect): 임계값 — R-1")
 
     def test_no_intent_means_no_checks(self):
         self.write("a.py", "x = 1\n")

@@ -165,6 +165,7 @@ def commit_msg(msg_file: str) -> list:
     if not rids:
         return [f"{CHECK} feat·fix 제목에 R-n 필요 (예: feat(etl): 결측 ID 제거 — R-2 수율 왜곡 방지)."]
     events, _ = parse_ledger(git_blob(":" + LEDGER) or "")
+    new_events = [e for e in events if e["_line"] > len((git_blob("HEAD:" + LEDGER) or "").splitlines())]
     rows, _ = ac_rows(git_blob(":" + INTENT) or "")
     problems = []
     for rid in rids:
@@ -174,8 +175,10 @@ def commit_msg(msg_file: str) -> list:
             continue
         results = {ac: (latest_verify(events, ac) or {}).get("result") for ac in acs}
         failed = [ac for ac, res in results.items() if res == "FAIL"]
-        if failed or "PASS" not in results.values():
-            state = f"최신 FAIL: {', '.join(failed)}" if failed else "verify PASS 없음"
+        # 이전 커밋의 PASS는 지금 변경을 검증하지 않는다: 이번 커밋에 추가한 PASS만 인정
+        fresh = [ac for ac in acs if (latest_verify(new_events, ac) or {}).get("result") == "PASS"]
+        if failed or not fresh:
+            state = f"최신 FAIL: {', '.join(failed)}" if failed else "이번 커밋에서 추가한 verify PASS 없음"
             problems.append(f"{CHECK} {rid}: 스테이징된 {LEDGER}에 {state}. $verify 4단계로 "
                             f'{{"type":"verify","refs":["AC-…"],"result":"PASS","line":"…"}} 추가 → '
                             f"git add {LEDGER} → 다시 커밋. FAIL이면 고친 뒤 다시 검증한다.")
