@@ -8,7 +8,7 @@ npm 기반 FE(React/Vite 등) 변경에만 적용한다. Streamlit 화면은 ver
 2. 린트: 프로젝트 설정의 대상 파일을 검사한다. 통과시키려고 규칙을 끄거나 오류를 숨기지 않는다. 경고가 출력되면 종료 코드가 0이어도 통과가 아니다.
 3. 구조: 하네스 구조 규칙([structure.md](../../fe-build/references/structure.md))을 쓰는 앱이면 구조 검사를 실행한다. ERROR는 실패, WARN(features 전환 신호)은 D-n 결정 대상이다. 기존 앱 규칙을 따르는 앱이면 생략하고 그 사실을 기록한다.
 4. 빌드: 실제 앱의 빌드 명령으로 산출물을 만든다.
-5. 계산·데이터 변환 로직을 바꿨다면 대표 입력과 경계값 테스트를 실행한다. 스타일 수정만으로 구현을 복제하는 테스트를 추가하지 않는다.
+5. 테스트: LOG 테스트 계획의 흐름·단위 테스트를 Vitest로 실행한다([test-strategy.md](test-strategy.md) 2·3절). 스타일 수정만으로 구현을 복제하는 테스트를 추가하지 않는다.
 
 신규 npm 앱을 frontend/에 둔 경우의 명령 예:
 
@@ -16,6 +16,7 @@ npm 기반 FE(React/Vite 등) 변경에만 적용한다. Streamlit 화면은 ver
 npm --prefix frontend run typecheck
 npm --prefix frontend run lint
 node .agents/skills/fe-build/scripts/check-structure.mjs frontend/src
+npm --prefix frontend run test
 npm --prefix frontend run build
 ```
 
@@ -29,11 +30,11 @@ npm --prefix frontend run build
 - 실제 API 연동 1개 이상을 확인한다. mock 기반 상태 테스트와 구분한다.
 - 변경에 관련된 로딩·빈 결과·실패·재시도·0/결측 표시를 확인한다.
 - 화면 변경은 데스크톱·좁은 화면에서 주요 내용과 조작이 보이는지 확인한다. 키보드로 핵심 입력·버튼을 조작한다.
-- 브라우저 자동화가 가능하면 기존 Playwright 또는 제공 도구를 사용한다. 자동화가 없으면 사용자에게 구체적인 경로·동작·기대값을 제시해 확인받는다. 응답이 없으면 미검증으로 남긴다.
+- 화면 확인은 제공 브라우저 도구로 한다. Playwright는 test-strategy 3절 조건일 때만 쓴다. 도구가 없으면 사용자에게 구체적인 경로·동작·기대값을 제시해 확인받는다. 응답이 없으면 미검증으로 남긴다.
 - E2E 명령은 한 번 실행하고 종료하도록 한다. 기존 미리보기 서버는 유지하고 테스트가 만든 서버만 정리한다.
 
 ## 기록
 
-docs/LOG.md 검증 표에 요구사항 | 앱 경로/변경 | 명령·브라우저 동작 | 관찰 결과 | 미검증을 기록한다. 코드 검증, 화면 확인, 업무 수치 검증을 혼동하지 않는다. 앱이 없는 하네스 문서 변경에서는 앱 테스트를 통과했다고 쓰지 않는다.
+docs/LOG.md 검증 표에 verify 4단계 형식(시각 | 결과 한 줄 | 구현 위치)으로 기록한다. 결과 한 줄에 Vitest 흐름 테스트(mock)인지 브라우저 확인(실제 API)인지 드러나게 쓴다. 코드 검증, 화면 확인, 업무 수치 검증을 혼동하지 않는다. 앱이 없는 하네스 문서 변경에서는 앱 테스트를 통과했다고 쓰지 않는다.
 
 근거: https://vite.dev/guide/features (TypeScript는 별도 타입 검사 필요).

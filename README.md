@@ -52,4 +52,4 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 - `$fe-setup`: 실제 환경과 의존성 확인, 필요한 설치, 미리보기 검증.
 - `$fe-build`: 구조 규칙(flat → features)과 구조 검사 스크립트, 코드 작성 규칙·예시, 데이터 계약, 화면 상태를 따라 기능 구현.
 - `$fe-design`: SK하이닉스 공식 CI(SK Red·SK Orange와 보조색) 기반 디자인 토큰·화면 골격·차트 색 적용.
-- `$verify`: 작업 단위마다 거치는 완료 판정·커밋 관문(테스트·수치 재계산·서버/화면 확인). FE 변경은 [frontend.md](.agents/skills/verify/references/frontend.md) 기준을 더한다.
+- `$verify`: 기능 시작 때 위험 기반 테스트 계획([test-strategy.md](.agents/skills/verify/references/test-strategy.md)), 작업 단위마다 완료 판정·커밋 관문(테스트·수치 재계산·서버/화면 확인)과 기능별 한 줄 보고. FE 변경은 [frontend.md](.agents/skills/verify/references/frontend.md) 기준을 더한다.
