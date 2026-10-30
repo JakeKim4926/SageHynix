@@ -79,7 +79,7 @@ FE Skill 3종은 React/Vite 앱 전용이다. 새 FE는 `$fe-setup` → `$fe-des
 ## 7. 커밋 규칙 (git log도 평가 대상)
 
 - 기능·의미 단위로 커밋. 메시지: `<type>(<scope>): <무엇을> — <왜>` (예: `feat(etl): 결측 웨이퍼 ID 제거 — R-2 수율 계산 왜곡 방지`)
-- 요구사항 ID(R-n)와 결정 ID(D-n)를 메시지에 연결한다. `feat`·`fix`는 제목의 R-n과 ledger의 verify PASS가 없으면 커밋 훅이 막는다.
+- 요구사항 ID(R-n)와 결정 ID(D-n)를 메시지에 연결한다. `feat`·`fix`는 제목의 R-n과 그 커밋에서 ledger에 추가한 verify PASS가 없으면 커밋 훅이 막는다.
 - `git reset --hard`, 히스토리 재작성, 제출 직전 결과물 통째 교체 금지.
 - 브랜치·타입·머지 메시지 등 세부는 `$git`을 따른다.
 
