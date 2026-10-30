@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Environment diagnosis and opt-in dependency installation. Standard library only."""
+"""Environment diagnosis. Standard library only."""
 import argparse
 import json
 import os
@@ -87,75 +87,11 @@ def check(profiles):
     return int(bool(failures))
 
 
-def append_lines(path, lines):
-    old = path.read_text(encoding="utf-8") if path.exists() else ""
-    missing = [line for line in lines if line not in old.splitlines()]
-    if missing:
-        with path.open("a", encoding="utf-8", newline="\n") as stream:
-            stream.write(("\n" if old and not old.endswith("\n") else "") + "\n".join(missing) + "\n")
-
-
-def initialize():
-    result = run(["git", "rev-parse", "--show-toplevel"])
-    if result.returncode or Path(result.stdout.strip()).resolve() != ROOT:
-        print("FAIL: 먼저 이 폴더를 Git 저장소 루트로 준비하세요. docs/SETUP.md 참고.")
-        return False
-    append_lines(ROOT / ".gitignore", [".venv/", "__pycache__/", "*.pyc", ".harness/log/", ".harness/state/"])
-    for path in (ROOT / ".harness/bin").glob("*.sh"):
-        path.chmod(path.stat().st_mode | 0o111)
-    for path in (ROOT / ".agents/skills").glob("*/scripts/*.py"):
-        path.chmod(path.stat().st_mode | 0o111)
-    (ROOT / "docs/research").mkdir(parents=True, exist_ok=True)
-    print("준비 완료: 실행 권한, Git 제외 설정, docs/research/")
-    return True
-
-
-def install(profiles):
-    wanted = packages(profiles)
-    if all(import_ok(sys.executable, module) for module in wanted):
-        print("선택한 패키지가 모두 사용 가능합니다. 설치 생략.")
-        return Path(sys.executable)
-    python = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python3")
-    if not python.exists():
-        # Reuse platform packages; install missing packages only inside this project.
-        result = run([sys.executable, "-m", "venv", "--system-site-packages", str(ROOT / ".venv")])
-        if result.returncode:
-            print("FAIL: 가상환경 생성 실패. python3-venv/권한을 확인하세요. docs/SETUP.md 참고.")
-            print(result.stderr)
-            return None
-    if run([str(python), "-m", "pip", "--version"]).returncode:
-        print("FAIL: 가상환경 pip 실행 불가. docs/SETUP.md 참고.")
-        return None
-    missing = [package for module, package in wanted.items() if not import_ok(python, module)]
-    if missing:
-        print("프로젝트 환경에 설치: " + ", ".join(missing), flush=True)
-        rc = subprocess.call([str(python), "-m", "pip", "--disable-pip-version-check", "install", *missing], cwd=ROOT)
-        if rc:
-            print("FAIL: 설치 실패. 네트워크/패키지 인덱스/권한을 확인하고 같은 명령으로 재시도하세요.")
-            return None
-    if not all(import_ok(python, module) for module in wanted):
-        print("FAIL: 설치 후 import 실패. 환경 충돌을 확인하세요. docs/SETUP.md 참고.")
-        return None
-    append_lines(ROOT / ".harness/requirements.local.txt", list(wanted.values()))
-    return python
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("check", "setup"))
+    parser.add_argument("action", choices=("check",))
     parser.add_argument("--profile", nargs="+", choices=PROFILES, default=[])
-    parser.add_argument("--install", nargs="+", choices=PROFILES, default=[])
     args = parser.parse_args()
-    if args.action == "check" and args.install:
-        parser.error("설치는 bash setup.sh --install <기능>으로 실행하세요")
-    if args.action == "setup":
-        if not initialize():
-            return 1
-        if args.install:
-            python = install(args.install)
-            if python is None:
-                return 1
-            return subprocess.call([str(python), str(Path(__file__).resolve()), "check", "--profile", *dict.fromkeys(args.profile + args.install)], cwd=ROOT)
     return check(args.profile)
 
 

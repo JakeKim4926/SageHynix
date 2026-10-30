@@ -5,8 +5,8 @@
 ## 시작 전 환경 준비
 
 - 이 저장소의 README는 하네스 안내다. 과제 지시서는 별도로 확인하고, 위치를 `docs/INTENT.md`에 기록한다.
-- 첫 사용은 `bash setup.sh`, 점검만 할 때는 `bash .harness/bin/doctor.sh`. 실패하면 `docs/SETUP.md`를 따른다.
-- 선택 의존성은 실제 과제에 필요한 것만 `bash setup.sh --install <기능>`으로 설치한다.
+- 환경 점검은 `bash .harness/bin/doctor.sh`. 실패하면 `docs/SETUP.md`를 따른다.
+- 패키지는 실제 과제에 필요한 것만, import로 없는 것을 확인한 뒤 설치한다.
 - Codex는 `bash .harness/bin/start.sh`로 시작해 프로젝트 가상환경을 상속한다.
 
 이 작업 공간은 "데이터를 활용한 AI 문제 해결 미션"을 180분 안에 푸는 곳이다.

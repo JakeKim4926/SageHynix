@@ -1,11 +1,10 @@
-"""Behavioral tests for setup and overlay installation; no network or model calls."""
+"""Behavioral tests for the environment check; no network or model calls."""
 import contextlib
 import importlib.util
 import io
 import json
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -21,7 +20,6 @@ def load(name):
 
 
 env = load("environment")
-overlay = load("install_workspace")
 
 
 class EnvironmentTests(unittest.TestCase):
@@ -109,55 +107,6 @@ class EnvironmentTests(unittest.TestCase):
         (self.root / ".agents/skills/fe-build/SKILL.md").unlink()
         with patch.object(env, "run", side_effect=self.fake_run):
             self.assertEqual(env.check([]), 1)
-
-    def test_installed_packages_skip_venv_and_pip(self):
-        with patch.object(env, "import_ok", return_value=True), patch.object(env, "run") as run, patch.object(env.subprocess, "call") as call:
-            self.assertEqual(env.install(["data"]), Path(sys.executable))
-            run.assert_not_called()
-            call.assert_not_called()
-        self.assertFalse((self.root / ".venv").exists())
-
-    def test_install_only_missing_selected_packages(self):
-        python = self.file(".venv/" + ("Scripts/python.exe" if env.os.name == "nt" else "bin/python3"))
-        installed = False
-        def available(interpreter, module):
-            return module != "openpyxl" or installed
-        def pip(args, **kwargs):
-            nonlocal installed
-            self.assertEqual(args, [str(python), "-m", "pip", "--disable-pip-version-check", "install", "openpyxl"])
-            installed = True
-            return 0
-        with patch.object(env, "import_ok", side_effect=available), patch.object(env, "run", side_effect=self.fake_run), patch.object(env.subprocess, "call", side_effect=pip) as call:
-            self.assertEqual(env.install(["excel"]), python)
-            self.assertEqual(call.call_count, 1)
-
-    def test_failed_install_stops(self):
-        self.file(".venv/" + ("Scripts/python.exe" if env.os.name == "nt" else "bin/python3"))
-        with patch.object(env, "import_ok", return_value=False), patch.object(env, "run", side_effect=self.fake_run), patch.object(env.subprocess, "call", return_value=1):
-            self.assertIsNone(env.install(["verify"]))
-        self.assertFalse((self.root / ".harness/requirements.local.txt").exists())
-
-    def test_initialize_is_idempotent_and_keeps_ignore_rules(self):
-        self.file(".gitignore", "provided-data/\n")
-        self.file(".harness/bin/test.sh", "#!/usr/bin/env bash\n")
-        with patch.object(env, "run", side_effect=self.fake_run):
-            self.assertTrue(env.initialize())
-            before = (self.root / ".gitignore").read_text()
-            self.assertTrue(env.initialize())
-        self.assertEqual((self.root / ".gitignore").read_text(), before)
-        self.assertIn("provided-data/", before)
-
-    def test_overlay_preserves_task_files_and_reports_conflicts(self):
-        self.file("README.md", "original task")
-        self.file("AGENTS.md", "organizer instructions")
-        with patch.object(sys, "argv", ["bootstrap", str(self.root)]), patch.object(overlay.subprocess, "call", return_value=0):
-            self.assertEqual(overlay.main(), 1)
-            self.assertEqual(overlay.main(), 1)
-        self.assertEqual((self.root / "README.md").read_text(), "original task")
-        self.assertEqual((self.root / "AGENTS.md").read_text(), "organizer instructions")
-        self.assertTrue((self.root / "AGENTS.harness.md").exists())
-        self.assertTrue((self.root / ".agents/skills/research/SKILL.md").exists())
-        self.assertFalse((self.root / "tests").exists())
 
 
 if __name__ == "__main__":
