@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" session-start",
+            "commandWindows": "bash .harness/bin/hook.sh session-start",
+            "timeout": 10,
+            "statusMessage": "harness: 세션 컨텍스트 주입"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" prompt",
+            "commandWindows": "bash .harness/bin/hook.sh prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" pretool",
+            "commandWindows": "bash .harness/bin/hook.sh pretool",
+            "timeout": 10,
+            "statusMessage": "harness: 가드레일 검사"
+          }
+        ]
+      }
+    ]
+  }
+}

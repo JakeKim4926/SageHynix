@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+.venv/
+.harness/log/
+.harness/state/
+.harness/tmp/
+ctx/INDEX.md
+ctx/.INDEX.*.tmp

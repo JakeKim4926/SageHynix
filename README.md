@@ -1,117 +1,92 @@
-# SageHynix — Codex 하네스 (SK하이닉스 AI 해커톤 2차 예선 대비)
+# SageHynix — 해커톤용 Codex 하네스
 
-180분 "데이터를 활용한 AI 문제 해결 미션"을 Codex로 풀 때 **기술·의도·인지 부채**를 남기지 않도록 미리 만들어 둔 하네스.
-과제 코드나 정답은 들어 있지 않다. 프로세스 도구(규칙, skill, 서브에이전트, 가드레일, 스크립트, 문서 골격)만 있다.
+데이터·AI 문제 해결 과제를 위한 작업 규칙, 스킬 16개, 검증 도구, 작업 기억을 담은 프로젝트다. **이 README는 하네스 안내이며, 주최 측 과제 지시서가 아니다.**
 
-| 부채 | Cofa 평가 축 | 하네스 장치 |
-|---|---|---|
-| 기술 | Technique: 작동하고 검증되는가 | `verify-before-done` skill, `verify.sh`, `verifier` 에이전트, 슬라이스 단위 커밋 규칙 |
-| 의도 | Intent: 목표·제약을 정확히 전달·반영했나 | `capture-requirements`, `plan-implementation`, `docs/INTENT.md`(R/A/Q ID 추적) |
-| 인지 | Cognition: 사람이 설명할 수 있나 | `rehearse-explanation`, `save-session-state`, `docs/COGNITION.md` |
-| (모델의) 맥락 유실 | 세 축 모두 | `ctx/` 작업 기억 + `$reuse-prior-work` skill + 훅 자동 주입 (아래) |
+## 빠른 시작
 
-설계 근거와 출처는 [docs/DESIGN.md](docs/DESIGN.md).
+clone한 폴더를 작업·제출 폴더로 사용할 수 있는지 먼저 확인한다.
 
-## 구성
-
-```
-bootstrap.sh                      작업 공간에 설치 (기존 파일 덮어쓰지 않음, ~/.codex 설정 안 건드림)
-template/                         작업 공간에 복사되는 것
-  AGENTS.md                       Codex 운영 규칙: 절대 규칙, 작업 루프, 시간 예산, skill 라우팅
-  .codex/config.toml              프로젝트 설정(서브에이전트 동시 4개, effort medium) — 모델·승인·샌드박스는 건드리지 않음
-  .codex/hooks.json + hooks/      SessionStart·UserPromptSubmit·PreToolUse 훅 (아래 가드레일)
-  .codex/rules/harness.rules      execpolicy: git push·원격 전송 forbidden, reset/clean·pkill prompt
-  .codex/agents/*.toml            서브에이전트 6종: data_profiler, domain_researcher, method_scout,
-                                  risk_reviewer, verifier, doc_auditor (모두 코드 수정 금지)
-  .harness/bin/                   clock.sh(타이머) wt.sh(워크트리) fanout.sh(병렬 조사)
-                                  verify.sh(검증 관문) doctor.sh(자가 진단) ctx.py(작업 기억 CLI)
-  docs/                           제출용: INTENT, PLAN, DECISIONS, WORKLOG, VERIFICATION, COGNITION
-  ctx/                            작업 기억: research/ data/ decision/ slice/ prompt/ session/ note/
-plugins/hynix-harness/            Codex 플러그인 (skill 9개의 단일 원본)
-  skills/                         capture-requirements, inspect-dataset, research-in-parallel, plan-implementation,
-                                  verify-before-done, write-submission-docs, rehearse-explanation,
-                                  save-session-state, reuse-prior-work
-.agents/plugins/marketplace.json  `codex plugin marketplace add`용
-tests/                            하네스 자체 테스트
-```
-
-## 작업 기억 `ctx/` — 재조사·같은 질문 반복 방지
-
-세션 사이로 넘어가는 건 파일뿐이다. 조사·분석·결정을 한 번 하면 `ctx/<종류>/<주제>/`에 남기고, 다음 세션은 대화가 아니라 그 결론과 근거 위치를 읽고 이어간다.
-
-```
-ctx/
-  INDEX.md        항목당 한 줄 (ID · 상태 · 한 줄 요약) — 자동 생성, 이것만 항상 읽는다
-  index.jsonl     메타데이터 원장 (덧붙이기만, ctx.py만 씀, 레인 병합 시 union)
-  research/<주제>/  brief.md 지시서 · report.md (결론·근거·미확인)
-  data/<데이터셋>/  profile.md · notes.md
-  decision/ slice/ prompt/ session/ note/
-```
-
-| 장치 | 동작 |
-|---|---|
-| `ctx.py find` → `get` | 작업 전 검색. `valid`면 재사용, 같은 조사를 다시 하지 않는다 |
-| `ctx.py new` → 본문 → `done` | 종류별 템플릿 생성. 필수 섹션이 비면 `done` 거부. 요약 섹션 첫 줄이 INDEX 한 줄 |
-| 신선도 | `--inputs` 파일(데이터 등)이 바뀌거나 `--uses` 항목이 다시 작성되면 자동 `stale` |
-| 훅 | SessionStart(시작·재개·압축 직후)에 목록 주입, 매 프롬프트에 관련 항목 최대 3줄 주입, `index.jsonl` 직접 수정 차단 |
-| `fanout.sh` | 레인 = `research/<name>` 항목. valid 레인은 건너뛰고 나머지만 실행 후 `done` 검증 |
-
-사람은 `@ctx/research/anomaly/report.md`처럼 참조만 하면 된다. 모델이 바뀐 세션에서도 같은 파일을 읽는다.
-
-## 가드레일
-
-| 장치 | 동작 |
-|---|---|
-| UserPromptSubmit 훅 | 모델이 Astra 계열이면 프롬프트 차단. 매 프롬프트에 `경과 N분 / 남은 M분 · 현재 단계` 주입. 프롬프트를 `.harness/log/prompts.jsonl`에 기록(협업 기록 원천) |
-| SessionStart 훅 | 타이머 상태, 재개 시 `docs/WORKLOG.md` 먼저 읽으라는 지시, `ctx/` 항목 목록 주입 |
-| PreToolUse 훅 | 차단: `git push`, 외부 호스트로 업로드/POST, scp·ssh·nc, 키·토큰·env 출력, `~/.codex/config.toml` 수정, 하네스 훅·규칙 자기수정, 감독·플랫폼 프로세스 kill, `rm -rf /·~·.·.git`, `git reset --hard`·`clean -f`·`rebase`. 허용: localhost POST, 공개 저장소 clone, pip install 등. 차단 내역은 `.harness/log/guard.jsonl` |
-| execpolicy rules | 위 정책 일부를 Codex 규칙 계층에서 이중으로 적용 |
-
-## 시험 당일 런북
-
-### 사전 체험 (15분, 1회) — 반드시 확인
-1. **Cofa Helper에 질문**: "본인이 만든 공개 GitHub 저장소(프로세스용 AGENTS.md·skill, 과제 코드 없음)를 git clone해서 써도 되나요?" — 가이드는 "일반적으로 공개된 GitHub 저장소·Skill"의 clone을 허용하고 "개인 PC의 비공개 Skill·파일 업로드"를 금지한다. 직접 만든 공개 저장소가 어느 쪽인지는 가이드만으로는 불분명하다.
-2. 허용되면 설치(아래) → `.harness/bin/doctor.sh`에서 FAIL 없음 확인
-3. `codex` 실행 → 폴더 신뢰 승인 → **`/hooks`에서 하네스 훅 3개 신뢰** → `/status`로 모델 확인
-4. 아무 프롬프트나 보내서 응답 컨텍스트에 `[harness] 경과…`가 반영되는지, `git push` 요청이 `[harness guard]`로 막히는지 확인
-5. `/skills`에 9개가 보이는지, "data_profiler와 method_scout를 병렬로 띄워서 README를 요약해" 같은 요청으로 서브에이전트가 뜨는지 확인 (안 뜨면 `fanout.sh` 사용)
-6. 간단한 서버를 `0.0.0.0`으로 띄워 Browser 탭 연결 확인
-
-### 설치 (작업 공간 터미널)
 ```bash
-git clone https://github.com/JakeKim4926/SageHynix ~/harness
-bash ~/harness/bootstrap.sh ~/workspace
+git clone https://github.com/JakeKim4926/SageHynix.git
+cd SageHynix
+bash setup.sh
 ```
-- 작업 공간에 `AGENTS.md`가 이미 있으면 건드리지 않고 `AGENTS.harness.md`로 둔다(직접 확인 후 합칠 것).
-- 설치 파일을 `chore(harness): …`로 커밋한다(워크트리 레인이 하네스를 물려받도록). `--no-commit`으로 끌 수 있다.
 
-### 180분 흐름
-| 시각 | 할 일 | 입력 예 |
-|---|---|---|
-| 0분 | 타이머 시작 | `.harness/bin/clock.sh start` |
-| 0–20 | 과제 파악, 담당자 질문 | `$capture-requirements` → 질문을 업무 담당자 메신저로 전송 → 답을 붙여 넣고 다시 `$capture-requirements` |
-| 20–35 | 병렬 조사, 계획 | `$inspect-dataset`, `$research-in-parallel`, `$plan-implementation` (모두 결과를 `ctx/`에) |
-| 35–130 | 슬라이스 반복 | 구현 → `$verify-before-done` → `$rehearse-explanation` (30분마다 `$save-session-state`). 새 세션은 `@ctx/INDEX.md` 참조로 시작 |
-| 130–155 | 보강, 문서 | `$write-submission-docs` |
-| 155–170 | 감사, 서술형 대비 | `$write-submission-docs`(감사), `$rehearse-explanation`(제출 모드) |
-| 170 | 제출 시작 | 저장 상태·필수 파일 확인 후 "제출하고 문제풀기" |
+`setup.sh`는 ctx·Git 제외/병합 설정·실행 권한을 준비하고 환경을 점검한다. 기본 실행은 패키지를 설치하지 않는다. 실패하면 종료 코드 1과 복구 안내를 출력한다.
 
-병렬 구현이 필요하면 `$plan-implementation`가 레인을 제안한다(`.harness/bin/wt.sh new <lane>` → 새 터미널 탭에서 `cd ~/wt/<lane> && codex`).
+주최 측이 지정한 과제 폴더가 이미 있다면 그 폴더에 적용한다.
 
-### 대안 설치: 플러그인 (skill만)
 ```bash
-codex plugin marketplace add JakeKim4926/SageHynix
-codex plugin add hynix-harness@sagehynix
+bash bootstrap.sh /실제/과제/폴더
+cd /실제/과제/폴더
 ```
-`~/.codex/config.toml`에 항목을 추가하므로, 플랫폼 관리 설정 변경으로 볼 여지가 있다. 기본은 위 `bootstrap.sh`(작업 공간 안에만 설치).
 
-## 자체 테스트
+기존 과제 README와 파일을 보존한다. 충돌 파일은 목록으로 보고하며 자동 커밋하지 않는다. 파일을 검토하고 충돌을 해결한 뒤 커밋해야 worktree 레인에도 하네스가 전달된다.
+
+## 필요한 도구만 준비
+
 ```bash
-bash tests/run_all.sh
+# 점검만: 설치·ctx 갱신 없음
+bash .harness/bin/doctor.sh
+bash .harness/bin/doctor.sh --profile data verify
+
+# 해당 기능이 필요할 때: 누락 패키지 설치 후 재검증
+bash setup.sh --install data verify
+
+# 준비한 프로젝트 환경으로 Codex 실행
+bash .harness/bin/start.sh
 ```
 
-## 검증 현황 (2026-10-29~30, Windows 10 + Codex CLI 0.125/0.165 로컬)
-- 확인됨 (ctx, 2026-10-30): `ctx.py` 단위 테스트 16개(템플릿 그대로면 done 거부, 요약 자동 추출, valid 재작성 거부·--redo, 한국어 조사 붙은 검색, 입력 변경·의존 항목 재작성 시 stale, 손상 행 무시, 훅의 목록·관련 항목 주입과 index.jsonl 직접 수정 차단), bootstrap 설치(ctx 커밋, INDEX.md 생성·ignore, union merge 속성), 가짜 codex로 `fanout.sh` 재실행 시 valid 레인 건너뜀, worktree 레인 2개가 각자 기록한 뒤 병합해도 충돌 없이 둘 다 valid. **미확인**: 실제 Codex 세션에서 훅 주입이 모델 행동(재조사 생략)을 바꾸는지 — 훅 신뢰 문제로 로컬 확인 불가, 사전 체험에서 확인.
-- 확인됨 (2026-10-29, ctx 추가 전 — skill 수는 당시 12개): 훅 정책 단위 테스트(차단 27건·허용 14건 등 11개 테스트), execpolicy 규칙 판정, bootstrap 설치·재실행 멱등성·기존 AGENTS.md 보존, `codex debug prompt-input`으로 AGENTS.md와 skill 12개 주입, `wt.sh` 레인 생성→병합→삭제, `fanout.sh` 2개 레인 병렬 실행·파일 출력, 프로파일러(pandas 3.1 / 표준 라이브러리), 플러그인 marketplace add → plugin add(skill 12개 설치).
-- **미확인**: (1) Codex 안에서 훅이 실제로 발동하는지(ctx 주입 포함) — 훅 신뢰는 `/hooks` 대화형 승인이 필요해 로컬 비대화형 실행에서 확인 못 함. (2) `.codex/agents/` 커스텀 에이전트가 spawn 도구에 노출되는지 — `codex exec`에서는 보이지 않았음(TUI에서는 미확인). (3) `fanout.sh` 레인 안에서의 파일 읽기 — 로컬 Windows 샌드박스 ACL 오류로 실패, 시험 환경(Linux)에서는 미확인. 셋 다 사전 체험 4·5번에서 확인할 것.
-- 시험 환경의 Codex 버전, python3/pandas 설치 여부는 알 수 없다(`doctor.sh`로 확인).
+선택 기능: `verify`, `data`, `excel`, `parquet`, `api`, `dashboard`, `plot`, `ml`.
+
+핵심 하네스는 Bash 4+, Git, Python 3.9+, 플랫폼의 Codex를 사용한다. 데이터·웹 라이브러리는 과제에 필요한 것만 설치한다. 설치 여부 판별, 가상환경, 누락 도구 설치 안내와 실패별 복구는 **[환경 준비 가이드](docs/SETUP.md)**를 따른다.
+
+## 프로젝트 구조
+
+```text
+AGENTS.md                 Codex 작업 규칙 및 시작 절차
+.agents/skills/            스킬 16개의 단일 원본
+.codex/                   프로젝트 설정, 에이전트, 훅, 규칙
+.harness/bin/              환경 점검, ctx, 검증, worktree, fanout
+.harness/tests/            하네스 자체 테스트 (과제 tests/와 분리)
+ctx/                      조사·결정·데이터·세션 작업 기억
+docs/                     INTENT, PLAN, DECISIONS, VERIFICATION, COGNITION, WORKLOG
+setup.sh                  현재 폴더 초기화·선택 설치·검증
+bootstrap.sh              기존 과제 폴더에 하네스 적용
+```
+
+`template/` 및 플러그인 설치를 거치지 않고 루트 파일을 직접 사용한다. 프로젝트 설정은 모델·승인 정책·샌드박스·인증을 덮어쓰지 않는다. 가상환경·로그·로컬 상태는 Git에서 제외한다.
+
+## 과제 시작
+
+1. 환경 점검 통과 후 Codex 프로젝트 신뢰와 훅 신뢰를 확인한다. `/skills`에 16개가 보이는지, 허용 모델인지 확인한다.
+2. `$task-intake`에 **실제 과제 지시서 경로**를 전달한다.
+3. 조사·계획 → 구현 → `$verify-gate` → `$cognition-check`를 반복한다.
+4. `$doc-writer`, `$doc-review`, `$defense-prep`로 제출을 준비한다.
+
+작업 기억은 `ctx/`에 남는다. `$ctx`로 기존 결과를 찾고, `$handoff`로 다음 세션에 상태를 전달한다. 병렬 조사에는 `$parallel-research`, 독립 구현에는 `$worktree-lanes`를 쓴다.
+
+하네스의 정책 검사 통과와 Codex 내부에서 훅이 실제 실행되는 것은 별개다. 플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결을 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다.
+
+## 하네스 자체 검증
+
+```bash
+bash .harness/tests/run_all.sh
+```
+
+단위 테스트와 셸 구문 검사를 실행한다. 실제 Codex 모델 호출이나 패키지 다운로드는 하지 않는다. 과제 코드는 별도 `tests/`와 `bash .harness/bin/verify.sh`로 검증한다.
+
+설계 배경과 기존 조사 기록: [docs/DESIGN.md](docs/DESIGN.md).
+
+## FE 작업
+
+기존 앱과 과제 요구를 우선한다. 신규 커스텀 UI의 기본 후보는 TypeScript(strict)·React·Vite·Tailwind이며, 기본 미리보기는 `0.0.0.0:3000`이다.
+
+- `$fe-setup`: 실제 환경과 의존성 확인, 필요한 설치, 미리보기 검증.
+- `$fe-build`: 코드 작성 규칙·예시, 데이터 계약, 화면 상태를 따라 기능 구현.
+- `$fe-design`: SK CI(SK Red·SK Orange) 기반 디자인 토큰·화면 골격·차트 색 적용.
+- `$verify-gate`: FE 타입·린트·빌드·실제 동작·수치 검증을 기존 기록에 통합.
+
+FE 스킬은 자연어 절차와 예시이며 사전 앱 템플릿을 포함하지 않는다. 코드·스킬 반입 허용은 과제 규정을 따른다. Node/npm 설치는 현재 `setup.sh --install` Python 프로필에 포함되지 않는다.
+
+FE 자동 검증은 과제 작업 중 `.harness/verify.local.sh`에 앱 명령을 연결한다. 이 파일은 `verify.sh`가 Bash로 실행하므로 실행 비트가 없어도 동작한다. 기본 `npm test --if-present` 성공만으로 FE 검증을 통과 처리하지 않는다. 자세한 기준은 [.agents/skills/verify-gate/references/frontend.md](.agents/skills/verify-gate/references/frontend.md)를 따른다.
