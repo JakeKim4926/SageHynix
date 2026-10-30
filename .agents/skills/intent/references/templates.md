@@ -35,7 +35,6 @@
 | `question` | `id`(Q-n), `refs`, `what` | 사용자·담당자에게 묻는 것 |
 | `answer` | `refs`([Q-n]), `what` | 질문의 답 |
 | `verify` | `refs`([AC-n.m]), `result`(PASS/FAIL/미검증/생략), `line` | `$verify` 4단계 한 줄. `where`(파일:함수) 선택 |
-| `audit` | `refs`, `result`, `line` | 의도 감사 판정 |
 
 `refs`의 `R-n`은 그 R의 모든 AC를 가리킨다.
 
@@ -45,7 +44,6 @@
 {"type":"decision","id":"D-1","refs":["R-1"],"what":"AC-1.1·1.2 승인","why":"사용자 확인","by":"user"}
 {"type":"decision","id":"D-2","refs":["AC-1.1"],"what":"accuracy ≥ 0.95 → 이상 recall ≥ 0.9","why":"docs/task/README.md:12 '놓치지 않도록', 이상 비율 3%","alt":"F1","by":"user"}
 {"type":"verify","refs":["AC-1.1"],"result":"PASS","line":"PASS 이상 탐지(R-1) — 검증셋 → recall 0.93 (python3 -m pytest -q tests/test_detect.py)","where":"src/detect.py:score"}
-{"type":"audit","refs":["P-1"],"result":"누락 1","line":"docs/task/README.md:15 '유지보수 비용' → 대응 AC 없음"}
 ```
 
 ## docs/LOG.md
