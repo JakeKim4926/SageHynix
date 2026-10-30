@@ -31,12 +31,12 @@ description: 제출 문서(계획서, 협업 기록, 결과 보고서, README �
 5. README 실행 명령 재현(서버면 띄우고 curl 후 종료)
 6. 민감 정보: `rg -n -i "api[_-]?key|token|secret|password"`
 
-문서가 많으면 1·3·4번을 `verifier` 서브에이전트에 SCRIPT(S5)로 맡기고, 메인은 2·5·6번을 직접 실행한다. 결과는 수정 목록으로 보여 주고, 승인된 것만 고친다.
+문서가 많으면 1·3·4번을 `verifier` 서브에이전트에 SCRIPT 6칸 형식으로 맡기고, 메인은 2·5·6번을 직접 실행한다. 결과는 수정 목록으로 보여 주고, 승인된 것만 고친다.
 
 ## 4. 인수인계 (긴 작업 전, 세션 교체 전, 약 30분마다)
 1. 사실 수집(직접 실행): `git log --oneline -10`, `git status --short`, `tail -5 .harness/log/verify.log`.
 2. `docs/LOG.md`의 현재 상태 갱신 — 완료 커밋, 진행 중 파일:함수, 다음 단계 3~5개, 막힌 것·결정 필요, 띄워 둔 서버(포트, 터미널 탭). 한 화면을 넘기지 않는다. 확인 못 한 것은 "미확인".
-3. 새 세션에 붙여 넣을 지시는 `prompts/SCRIPT.md`의 S6 형식으로 함께 준다.
+3. 새 세션에 붙여 넣을 지시는 `prompts/SCRIPT.md`의 6칸 형식으로 함께 준다([Context]에 `docs/LOG.md`, `docs/INTENT.md`, `git log --oneline -10`).
 
 ## 커밋
 `docs(<문서>): <무엇을> — 근거 연결/한계 추가`

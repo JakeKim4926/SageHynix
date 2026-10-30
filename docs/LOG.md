@@ -1,7 +1,7 @@
 # LOG — 검증 기록과 현재 상태
 
 > `$verify`가 검증 표를, `$doc` 인수인계가 현재 상태를 갱신한다. 실행한 것만 적고, 못 한 것은 `미검증`.
-> 새 세션은 이 파일과 `git log --oneline -10`만 읽고 이어간다(지시는 `prompts/SCRIPT.md` S6).
+> 새 세션은 이 파일과 `git log --oneline -10`만 읽고 이어간다(지시는 `prompts/SCRIPT.md` 6칸 형식).
 
 ## 현재 상태
 - 완료(커밋):

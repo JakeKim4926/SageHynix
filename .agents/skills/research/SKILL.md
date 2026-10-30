@@ -28,7 +28,7 @@ description: 과제 README·업무 담당자 답변·제공 데이터·도메인
 ```
 
 ## 병렬 (독립 질문 2개 이상일 때만)
-- `researcher` 서브에이전트 최대 3개. 지시는 `prompts/SCRIPT.md`의 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]`으로 쓴다(S2).
+- `researcher` 서브에이전트 최대 3개. 지시는 `prompts/SCRIPT.md`의 6칸 `[Role] [Context] [Task] [Rules] [Output] [Done]`으로 쓴다.
   서브에이전트는 이 대화를 모른다 — 필요한 사실과 파일 경로를 [Context]에 직접 적는다.
 - 서로의 결과에 의존하는 질문은 순차로. 이미 답이 있는 질문(README, INTENT, 기존 research 파일)은 맡기지 않는다. 토큰 사용량도 평가 신호다.
 - 끝나면 메인이 결론을 합쳐 보고하고, 서브에이전트가 낸 수치 하나 이상은 직접 다시 실행해 확인한다. 서로 충돌하는 주장은 충돌로 적는다.
