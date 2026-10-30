@@ -2,9 +2,9 @@
 """Codex hook entrypoint for the hackathon harness.
 
 Usage (from .codex/hooks.json):
-    harness_hook.py session-start   # SessionStart: inject handoff reminder
+    harness_hook.py session-start   # SessionStart: handoff/intent reminder, set git core.hooksPath
     harness_hook.py prompt          # UserPromptSubmit: model guard, log prompt
-    harness_hook.py pretool         # PreToolUse: block outbound / destructive / self-edit
+    harness_hook.py pretool         # PreToolUse: block outbound / destructive / self-edit / docs/task edits
 
 Reads one JSON object on stdin. Standard library only.
 Fails open (exit 0, no output) on internal errors so a broken hook never wedges a session,
@@ -13,6 +13,7 @@ except that PreToolUse denials are always explicit JSON.
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -61,6 +62,9 @@ def deny(cwd: str, reason: str, detail: str) -> None:
 
 PROTECTED_PATH = re.compile(r"(\.codex/config\.toml|/etc/codex|\.codex/hooks|\.codex/hooks\.json|\.codex/rules|\.codex/auth\.json)")
 WRITE_VERBS = re.compile(r"(>|\btee\b|\bsed\s+-i|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\btruncate\b|\bperl\s+-pi)")
+TASK_PATH = re.compile(r"(^|[\s/'\"=>])docs/task/")  # 과제 원문: 반입(추가)만 허용
+TASK_EDIT_VERBS = re.compile(r"(>>|\btee\b|\bsed\s+-i|\bmv\b|\brm\b|\btruncate\b|\bperl\s+-pi)")
+GIT_HOOKS_PATH = ".codex/hooks/git"
 
 
 def _urls(cmd: str):
@@ -96,6 +100,15 @@ def check_shell(cmd: str):
     if PROTECTED_PATH.search(c) and WRITE_VERBS.search(c):
         return "플랫폼 Codex 설정·하네스 가드레일(.codex/hooks, .codex/rules) 수정은 금지. 필요하면 사용자에게 요청."
 
+    # Intent trace: task originals are append-only, commit hooks are not bypassed.
+    if TASK_PATH.search(c) and TASK_EDIT_VERBS.search(c):
+        return "docs/task/ 원문은 반입(cp) 후 수정·삭제 금지. 필요하면 사용자에게 보고."
+    if re.search(r"\bgit\b.*\s--no-verify\b", c) or re.search(r"\bgit\s+commit\b[^\"']*\s-[a-zA-Z]*n", c):
+        return "커밋 훅 우회(--no-verify/-n)는 금지. [trace check]는 메시지대로 고쳐 다시 커밋한다."
+    if re.search(r"core\.hooksPath", c, re.I) and ("--unset" in c or not re.search(
+            r"core\.hooksPath(\s+" + re.escape(GIT_HOOKS_PATH) + r"/?(\s|$)|\s*$|\s*[;&|])", c, re.I)):
+        return f"core.hooksPath는 {GIT_HOOKS_PATH} 고정(의도 추적 훅). 변경·해제 금지."
+
     # Platform / supervisor processes.
     if re.search(r"\bkill\s+(-\S+\s+)*-1\b|\bkill\s+(-\S+\s+)*1\b(?!\d)", c) or \
        re.search(r"\b(pkill|killall)\b.*\b(codex|e2b|envd|proctor|cofa|probe|node\s*$)", c, re.I) or \
@@ -112,10 +125,12 @@ def check_shell(cmd: str):
 
 def check_patch(patch: str, cwd: str):
     ws = workspace_root(cwd)
-    for path in re.findall(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", patch, re.M):
+    for op, path in re.findall(r"^\*\*\* (Add|Update|Delete) File: (.+)$", patch, re.M):
         p = path.strip().replace("\\", "/")
         if PROTECTED_PATH.search(p):
             return f"{p}: 하네스 가드레일/플랫폼 설정 파일은 에이전트가 수정할 수 없음."
+        if op != "Add" and TASK_PATH.search(p):
+            return f"{p}: docs/task/ 원문은 반입 후 수정·삭제 금지. 필요하면 사용자에게 보고."
         if p.startswith("/") or p.startswith("~"):
             target = Path(os.path.expanduser(p)).resolve()
             try:
@@ -134,6 +149,11 @@ def handle_pretool(payload: dict) -> None:
         cmd = " ".join(map(str, cmd))
     if tool == "apply_patch" or cmd.lstrip().startswith("*** Begin Patch"):
         reason = check_patch(cmd, cwd)
+    elif tool in ("Edit", "Write") and isinstance(tin, dict) and tin.get("file_path"):
+        p = str(tin["file_path"])
+        exists = (Path(cwd or ".") / p).exists()
+        reason = check_patch(f"*** {'Update' if tool == 'Edit' or exists else 'Add'} File: {p}", cwd)
+        cmd = p
     else:
         reason = check_shell(cmd)
     if reason:
@@ -154,6 +174,26 @@ def handle_prompt(payload: dict) -> None:
         return
 
 
+def intent_status(root: Path) -> list:
+    """Point git at the intent trace hooks and summarize the intent contract."""
+    lines = []
+    if (root / ".git").exists() and (root / GIT_HOOKS_PATH / "pre-commit").exists():
+        cur = subprocess.run(["git", "-C", str(root), "config", "core.hooksPath"],
+                             capture_output=True, text=True).stdout.strip()
+        if not cur:
+            subprocess.run(["git", "-C", str(root), "config", "core.hooksPath", GIT_HOOKS_PATH],
+                           capture_output=True)
+        elif cur.rstrip("/") != GIT_HOOKS_PATH:
+            lines.append(f"[harness] ⚠ core.hooksPath={cur} — 의도 추적 훅({GIT_HOOKS_PATH})이 꺼져 있음. 사용자에게 확인.")
+    import intent_trace  # same directory
+    summary = intent_trace.summary(root)
+    if summary is None:
+        lines.append("[harness] docs/INTENT.md 없음 — 과제 파악 후 구현 전에 $intent로 원문 반입·의도 계약부터.")
+    else:
+        lines.append(f"[harness] 의도 추적: {summary}. 상세: python3 .codex/hooks/intent_trace.py report")
+    return lines
+
+
 def handle_session_start(payload: dict) -> None:
     cwd = payload.get("cwd", "")
     lines = []
@@ -163,6 +203,7 @@ def handle_session_start(payload: dict) -> None:
     model = str(payload.get("model") or "")
     if "astra" in model.lower():
         lines.append(f"[harness] ⚠ 현재 모델 '{model}'은 Astra 계열(사용 제한). /model 로 변경 필요.")
+    lines += intent_status(workspace_root(cwd))
     if lines:
         emit_context("SessionStart", "\n".join(lines))
 
