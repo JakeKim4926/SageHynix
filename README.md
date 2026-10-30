@@ -24,7 +24,7 @@ cp -rn /tmp/h/AGENTS.md /tmp/h/.agents /tmp/h/.codex /tmp/h/prompts .
 AGENTS.md          Codex 작업 규칙
 .agents/skills/     intent, analyze, verify, git, fe-setup, fe-build, fe-design
 .codex/            프로젝트 설정, 에이전트(researcher, verifier), 가드레일 훅, 규칙
-.codex/hooks/git/   의도 추적 커밋 훅(pre-commit, commit-msg → intent_trace.py)
+.codex/hooks/git/   의도 추적 git 훅(pre-commit, pre-merge-commit, prepare-commit-msg, commit-msg → intent_trace.py)
 prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 ```
 
@@ -44,7 +44,7 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 
 작업 기억은 과제 중에 Codex가 만드는 파일로만 남는다: 원문은 `docs/task/`, 목적·요구사항·AC는 `docs/INTENT.md`, 가정·질문·결정·검증 이력은 `docs/ledger.jsonl`(추가만), 조사는 `docs/research/<주제>.md`, 인수인계는 `docs/LOG.md`. 추적표는 `python3 .codex/hooks/intent_trace.py report`, 훅 자체 테스트는 `python3 -m unittest discover -s .codex/hooks -p "test_*.py"`, 프로파일 스크립트 테스트는 `python3 -m unittest discover -s .agents/skills/analyze/scripts -p "test_*.py"`.
 
-플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결은 직접 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다.
+플랫폼에서 훅 신뢰·실행, 커스텀 에이전트 노출, Browser 포트 연결은 직접 확인해야 한다. 실제 시험 환경의 설치 패키지와 Codex 버전은 미확인이다. main 머지 완료 검사(pre-merge-commit)는 git 2.24 이상이 필요하며, 시험 환경의 git 버전도 미확인이다.
 
 ## FE 작업
 
