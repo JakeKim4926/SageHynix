@@ -52,4 +52,4 @@ prompts/SCRIPT.md   6칸 지시 형식과 복사용 빈 틀
 - `$fe-setup`: 실제 환경과 의존성 확인, 필요한 설치, 미리보기 검증.
 - `$fe-build`: 코드 작성 규칙·예시, 데이터 계약, 화면 상태를 따라 기능 구현.
 - `$fe-design`: SK CI(SK Red·SK Orange) 기반 디자인 토큰·화면 골격·차트 색 적용.
-- `$verify`: FE 타입·린트·빌드·실제 동작·수치 검증. 기준은 [frontend.md](.agents/skills/verify/references/frontend.md).
+- `$verify`: 작업 단위마다 거치는 완료 판정·커밋 관문(테스트·수치 재계산·서버/화면 확인). FE 변경은 [frontend.md](.agents/skills/verify/references/frontend.md) 기준을 더한다.
