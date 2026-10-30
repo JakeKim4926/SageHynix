@@ -17,7 +17,7 @@ npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
-`.harness/bin/verify.sh`는 기본적으로 Python 검사와 루트 npm test만 실행한다. FE 명령을 자동 연결하려면 과제 작업 중 `.harness/verify.local.sh`를 생성하고 위 명령을 `set -euo pipefail` 아래에 연결한다. 해당 스크립트는 프로젝트 루트에서 실행된다. pnpm/yarn·모노레포는 해당 앱 명령으로 바꾼다.
+위 명령은 프로젝트 루트에서 직접 실행한다. pnpm/yarn·모노레포는 해당 앱 명령으로 바꾼다.
 
 검증 스크립트 누락·의존성 없음·브라우저 실행 불가는 미검증이다. `--if-present`, 테스트 0개, SKIP 또는 종료 코드 0만으로 필수 검증 통과를 주장하지 않는다. verify.local.sh가 없으면 필요한 FE 명령을 직접 실행하고 누락을 기록한다.
 

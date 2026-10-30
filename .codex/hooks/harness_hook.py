@@ -17,19 +17,12 @@ import sys
 import time
 from pathlib import Path
 
-STATE_DIR = Path(os.environ.get("HYNIX_HARNESS_HOME", Path(__file__).resolve().parents[2] / ".harness" / "state"))
-WORKSPACE_FILE = STATE_DIR / "workspace"
-
 LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "[::1]", "::1")
 
 
 # ---------------------------------------------------------------- utilities
 
 def workspace_root(cwd: str) -> Path:
-    if WORKSPACE_FILE.exists():
-        ws = WORKSPACE_FILE.read_text(encoding="utf-8").strip()
-        if ws:
-            return Path(ws)
     p = Path(cwd or ".").resolve()
     for cand in [p, *p.parents]:
         if (cand / ".git").exists():
@@ -38,10 +31,10 @@ def workspace_root(cwd: str) -> Path:
 
 
 def log_event(cwd: str, name: str, record: dict) -> None:
-    if os.environ.get("HYNIX_HARNESS_NOLOG"):  # self-tests from doctor.sh
+    if os.environ.get("HYNIX_HARNESS_NOLOG"):  # self-tests
         return
     try:
-        log_dir = workspace_root(cwd) / ".harness" / "log"
+        log_dir = workspace_root(cwd) / ".codex" / "log"
         log_dir.mkdir(parents=True, exist_ok=True)
         record = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S"), **record}
         with open(log_dir / f"{name}.jsonl", "a", encoding="utf-8") as f:

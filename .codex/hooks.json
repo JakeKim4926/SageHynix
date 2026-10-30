@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" session-start",
-            "commandWindows": "bash .harness/bin/hook.sh session-start",
+            "command": "python3 \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.codex/hooks/harness_hook.py\" session-start",
+            "commandWindows": "python .codex/hooks/harness_hook.py session-start",
             "timeout": 10,
             "statusMessage": "harness: 세션 컨텍스트 주입"
           }
@@ -19,8 +19,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" prompt",
-            "commandWindows": "bash .harness/bin/hook.sh prompt",
+            "command": "python3 \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.codex/hooks/harness_hook.py\" prompt",
+            "commandWindows": "python .codex/hooks/harness_hook.py prompt",
             "timeout": 10
           }
         ]
@@ -32,8 +32,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.harness/bin/hook.sh\" pretool",
-            "commandWindows": "bash .harness/bin/hook.sh pretool",
+            "command": "python3 \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.codex/hooks/harness_hook.py\" pretool",
+            "commandWindows": "python .codex/hooks/harness_hook.py pretool",
             "timeout": 10,
             "statusMessage": "harness: 가드레일 검사"
           }
