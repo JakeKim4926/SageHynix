@@ -1,6 +1,24 @@
 # FE 코드 작성 규칙과 예시
 
-기존 코드의 일관된 규칙이 우선이다. 아래는 신규 TypeScript/React 코드의 기본값이며, 예시의 Summary는 설명용 계약이다. 실제 데이터 필드와 업무 의미를 먼저 확인한다.
+기존 코드의 일관된 규칙이 우선이다. 아래는 신규 TypeScript/React 코드의 기본값이며, 예시의 Summary는 설명용 계약이다. 실제 데이터 필드와 업무 의미를 먼저 확인한다. 0절·5절의 나쁜 예/좋은 예는 [code-design.md](code-design.md)에 있다.
+
+## 0. 구조와 이름
+
+신규 앱은 평평하게 시작한다. 화면이 2개 이상이거나 src 파일이 15개를 넘을 때만 `features/<기능>/`으로 묶는다.
+
+```
+src/
+  App.tsx        화면 조립만
+  components/    화면 조각 (KpiCard.tsx, YieldChart.tsx)
+  api.ts         호출·응답 검증 (2절)
+  lib/           순수 계산·포맷 (calc.ts, format.ts)과 그 테스트
+  types.ts       공유 타입
+```
+
+- import는 `App → components → api·lib·types` 한 방향이다. lib·api는 React와 컴포넌트를 import하지 않는다. index.ts 재수출(barrel)을 만들지 않는다.
+- 컴포넌트와 파일 이름은 PascalCase로 같게 하고 named export한다. 훅은 `useX`, 이벤트 핸들러는 `handleX`, 그것을 받는 prop은 `onX`, boolean은 `is`·`has`로 시작한다.
+- 업무 용어는 데이터 컬럼과 INTENT 용어를 그대로 쓴다. 같은 값을 `yield`·`rate`·`ratio`로 섞어 부르지 않는다.
+- 기준값·임계값은 이름 붙인 상수로 두고 근거 ID를 단다: `const YIELD_TARGET = 0.95; // D-2`.
 
 ## 1. 타입과 외부 데이터
 
@@ -76,6 +94,12 @@ export function formatPercent(ratio: number | null): string {
 
 파생값은 중복 상태로 저장하지 않는다: `const selectedRows = rows.filter(row => selectedIds.has(row.id));`.
 useMemo/useCallback·전역 상태·별도 라우터는 기본 설치 항목이 아니다. 측정된 문제나 요구사항이 있으면 도입한다. React 상태의 배열·객체는 직접 변경하지 않는다. 목록 key는 안정된 데이터 ID를 사용한다.
+
+- 컴포넌트 안에 `renderX()` 함수를 두지 않고 컴포넌트로 뺀다. 상태를 쓰지 않는 helper는 컴포넌트 밖에 둔다.
+- props가 5개를 넘거나 boolean prop으로 화면 모드를 바꾸기 시작하면 분리 신호다.
+- 상태는 쓰는 컴포넌트 가까이 둔다. 형제가 함께 쓸 때만 가장 가까운 공통 부모로 올린다.
+- `count && <X />`는 count가 0이면 0을 출력한다. `count > 0 &&` 또는 삼항을 쓴다. 중첩 삼항 대신 early return을 쓴다.
+- useEffect는 외부 시스템과 맞출 때(조회·구독·타이머)만 쓴다. 파생값은 렌더 중 계산하고, 사용자 동작의 결과는 이벤트 핸들러에서 처리한다. react-hooks 린트 경고를 끄지 않는다.
 
 ## 6. 의미 있는 HTML과 스타일
 

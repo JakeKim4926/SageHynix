@@ -8,7 +8,7 @@ description: FE 화면·입력·조회·상호작용을 구현하거나 수정�
 목표: 실제 데이터로 동작하고 사용자가 해석할 수 있는 기능을 구현한다.
 
 1. 이번 요구사항·수용 기준, 앱 경로, 기존 컴포넌트·scripts를 읽는다. 기존 계획과 승인을 재사용한다. 실행 환경이 바뀌거나 막힐 때만 fe-setup으로 돌아간다.
-2. 코드 작성 전에 [coding-rules.md](references/coding-rules.md)를 읽는다. 같은 작업에서 이미 읽고 변경되지 않았다면 재독하지 않는다. 기존 프로젝트 규칙을 우선한다.
+2. 코드 작성 전에 [coding-rules.md](references/coding-rules.md)를 읽는다. 같은 작업에서 이미 읽고 변경되지 않았다면 재독하지 않는다. 기존 프로젝트 규칙을 우선한다. 구조·이름·컴포넌트 분리가 애매하면 [code-design.md](references/code-design.md) 예시를 본다.
 3. 비동기 조회·입력 화면은 [ui-states.md](references/ui-states.md), API·수치·차트는 [data-contract.md](references/data-contract.md)를 필요한 경우 읽는다.
 4. 실제 입력 → 계산/API → 화면의 가장 작은 동작 단위로 구현한다. 새 라이브러리·범용 엔진·추상화는 현재 요구사항에 필요할 때만 추가한다. 임시 데이터는 표시하고 실제 데이터 연결 여부를 구분한다.
 5. 변경한 동작을 확인하고 완료 판정은 기존 verify의 [FE 절차](../verify/references/frontend.md)를 따른다. 타입·빌드·화면 검증의 결과를 구분한다. 별도 검증 Skill이나 중복 기록을 만들지 않는다.
