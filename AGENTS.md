@@ -42,7 +42,7 @@
 |---|---|
 | 완료 판정, 커밋 | `$verify` |
 | FE 최초 준비·런타임·미리보기 문제 | `$fe-setup` |
-| FE 화면·입력·조회·상호작용 구현 | `$fe-build` |
+| FE 화면·입력·조회·상호작용 구현, 파일 위치·features 구조 전환 | `$fe-build` |
 | FE 색·글꼴·화면 골격·차트 색 (SK CI 토큰) | `$fe-design` |
 
 FE Skill 3종은 React/Vite 앱 전용이다. 새 FE는 `$fe-setup` → `$fe-design` 1~2단계 → `$fe-build` 순서로 시작한다. Streamlit 화면에는 쓰지 않는다.

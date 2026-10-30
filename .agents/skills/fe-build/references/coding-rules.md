@@ -1,21 +1,11 @@
 # FE 코드 작성 규칙과 예시
 
-기존 코드의 일관된 규칙이 우선이다. 아래는 신규 TypeScript/React 코드의 기본값이며, 예시의 Summary는 설명용 계약이다. 실제 데이터 필드와 업무 의미를 먼저 확인한다. 0절·5절의 나쁜 예/좋은 예는 [code-design.md](code-design.md)에 있다.
+기존 코드의 일관된 규칙이 우선이다. 아래는 신규 TypeScript/React 코드의 기본값이며, 예시의 Summary는 설명용 계약이다. 실제 데이터 필드와 업무 의미를 먼저 확인한다. 0절·2절·5절의 나쁜 예/좋은 예는 [code-design.md](code-design.md)에 있다.
 
 ## 0. 구조와 이름
 
-신규 앱은 평평하게 시작한다. 화면이 2개 이상이거나 src 파일이 15개를 넘을 때만 `features/<기능>/`으로 묶는다.
+파일 위치·import 방향·features 전환은 [structure.md](structure.md)를 따른다. 새 파일을 만들거나 옮기기 전에 그 문서의 2절(어디에 두나)을 보고, 작업 단위를 마치면 5절 구조 검사를 실행한다.
 
-```
-src/
-  App.tsx        화면 조립만
-  components/    화면 조각 (KpiCard.tsx, YieldChart.tsx)
-  api.ts         호출·응답 검증 (2절)
-  lib/           순수 계산·포맷 (calc.ts, format.ts)과 그 테스트
-  types.ts       공유 타입
-```
-
-- import는 `App → components → api·lib·types` 한 방향이다. lib·api는 React와 컴포넌트를 import하지 않는다. index.ts 재수출(barrel)을 만들지 않는다.
 - 컴포넌트와 파일 이름은 PascalCase로 같게 하고 named export한다. 훅은 `useX`, 이벤트 핸들러는 `handleX`, 그것을 받는 prop은 `onX`, boolean은 `is`·`has`로 시작한다.
 - 업무 용어는 데이터 컬럼과 INTENT 용어를 그대로 쓴다. 같은 값을 `yield`·`rate`·`ratio`로 섞어 부르지 않는다.
 - 기준값·임계값은 이름 붙인 상수로 두고 근거 ID를 단다: `const YIELD_TARGET = 0.95; // D-2`.
@@ -43,7 +33,7 @@ export function parseSummary(value: unknown): Summary {
 
 ## 2. 통신 경계
 
-호출·HTTP 오류·응답 검증은 기능별 API 모듈 또는 lib/api.ts에서 처리한다. 화면마다 복제하지 않는다. 아래 코드는 위 타입과 파서가 같은 모듈에 있는 경우다.
+호출·HTTP 오류·응답 검증은 `src/api.ts`(feature 전용이면 `features/<기능>/api.ts`)에서 처리한다. 화면마다 복제하지 않는다. 조회 시점·취소·상태는 훅이 맡는다([code-design.md](code-design.md) 7절). 아래 코드는 위 타입과 파서가 같은 모듈에 있는 경우다.
 
 ```ts
 export async function getSummary(signal?: AbortSignal): Promise<Summary> {
@@ -58,7 +48,7 @@ export async function getSummary(signal?: AbortSignal): Promise<Summary> {
 
 ## 3. 상태는 모순 없이
 
-로딩·오류·성공을 독립 boolean으로 중복 저장하기보다 판별 가능한 상태로 표현한다. 아래 예시는 Summary 타입을 같은 모듈에 두거나 type import한 경우다.
+로딩·오류·성공을 독립 boolean으로 중복 저장하기보다 판별 가능한 상태로 표현한다. LoadState는 여러 파일이 쓰므로 types.ts에 두고, 아래 예시는 그것과 Summary를 type import한 경우다.
 
 ```tsx
 type LoadState<T> =

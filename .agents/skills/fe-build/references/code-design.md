@@ -1,6 +1,6 @@
 # 구조·이름·컴포넌트 설계 예시
 
-[coding-rules.md](coding-rules.md) 0절·5절의 예시다. 신규 앱의 첫 컴포넌트를 만들 때, 컴포넌트를 나누거나 상태 위치를 정할 때 읽는다. Lot은 설명용 타입이며 실제 필드는 데이터에서 확인한다.
+[coding-rules.md](coding-rules.md) 0절·2절·5절의 예시다. 파일 위치는 [structure.md](structure.md)를 따른다. 신규 앱의 첫 컴포넌트를 만들 때, 컴포넌트를 나누거나 상태 위치를 정할 때, 조회 훅을 만들 때 읽는다. Lot은 설명용 타입이며 실제 필드는 데이터에서 확인한다.
 
 ## 1. 이름과 기준값
 
@@ -110,7 +110,7 @@ useEffect(() => {
 const handleDownload = () => downloadCsv(filtered);
 ```
 
-useEffect가 맞는 경우: 조건이 바뀔 때 API 조회(취소 포함, coding-rules 2절), 구독, 타이머, 차트 라이브러리처럼 DOM을 직접 다루는 외부 객체 연결.
+useEffect가 맞는 경우: 조건이 바뀔 때 API 조회(취소 포함, 7절), 구독, 타이머, 차트 라이브러리처럼 DOM을 직접 다루는 외부 객체 연결.
 
 ## 6. 상태 위치
 
@@ -130,3 +130,40 @@ function App({ lots }: { lots: Lot[] }) {
 ```
 
 정렬 방향처럼 표 안에서만 쓰는 상태는 LotTable 안에 둔다. 전역 상태 라이브러리는 요구사항이 생길 때 도입한다.
+
+## 7. 조회 훅
+
+호출·검증은 api.ts, 조회 시점·취소·상태는 훅, 표시는 컴포넌트가 맡는다. getSummary는 coding-rules 2절 함수에 line 조건을 더한 형태다.
+
+```tsx
+// hooks/useSummary.ts
+import { useEffect, useState } from "react";
+import { getSummary } from "../api";
+import type { LoadState, Summary } from "../types";
+
+export function useSummary(line: string): LoadState<Summary> {
+  // 어떤 조건의 결과인지 함께 저장한다. 조건이 바뀌면 이전 결과 대신 loading이 보인다.
+  const [result, setResult] = useState<{ line: string; state: LoadState<Summary> } | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getSummary(line, controller.signal)
+      .then((data) => setResult({ line, state: { status: "success", data } }))
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return; // 취소는 오류로 보이지 않는다
+        const message = error instanceof Error ? error.message : "집계 조회 실패";
+        setResult({ line, state: { status: "error", message } });
+      });
+    return () => controller.abort();
+  }, [line]);
+
+  if (result === null || result.line !== line) return { status: "loading" };
+  return result.state;
+}
+
+// App.tsx
+const summary = useSummary(line);
+<SummaryPanel state={summary} />;
+```
+
+나쁜 예: 컴포넌트 안에서 fetch와 응답 검증, effect 본문에서 `setState({ status: "loading" })` 동기 호출(react-hooks 린트 경고), 취소 없이 마지막 응답이 이전 조건 결과를 덮어쓰기.

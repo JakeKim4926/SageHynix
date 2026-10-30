@@ -5,15 +5,17 @@ npm 기반 FE(React/Vite 등) 변경에만 적용한다. Streamlit 화면은 ver
 ## 자동 검사
 
 1. 타입 검사: 앱 소스가 포함되는 tsconfig로 검사한다. 프로젝트 references 구성에서 빈 루트만 검사하지 않도록 대상 파일을 확인한다. Vite 변환·빌드 자체는 타입 검사가 아니다.
-2. 린트: 프로젝트 설정의 대상 파일을 검사한다. 통과시키려고 규칙을 끄거나 오류를 숨기지 않는다.
-3. 빌드: 실제 앱의 빌드 명령으로 산출물을 만든다.
-4. 계산·데이터 변환 로직을 바꿨다면 대표 입력과 경계값 테스트를 실행한다. 스타일 수정만으로 구현을 복제하는 테스트를 추가하지 않는다.
+2. 린트: 프로젝트 설정의 대상 파일을 검사한다. 통과시키려고 규칙을 끄거나 오류를 숨기지 않는다. 경고가 출력되면 종료 코드가 0이어도 통과가 아니다.
+3. 구조: 하네스 구조 규칙([structure.md](../../fe-build/references/structure.md))을 쓰는 앱이면 구조 검사를 실행한다. ERROR는 실패, WARN(features 전환 신호)은 D-n 결정 대상이다. 기존 앱 규칙을 따르는 앱이면 생략하고 그 사실을 기록한다.
+4. 빌드: 실제 앱의 빌드 명령으로 산출물을 만든다.
+5. 계산·데이터 변환 로직을 바꿨다면 대표 입력과 경계값 테스트를 실행한다. 스타일 수정만으로 구현을 복제하는 테스트를 추가하지 않는다.
 
 신규 npm 앱을 frontend/에 둔 경우의 명령 예:
 
 ```bash
 npm --prefix frontend run typecheck
 npm --prefix frontend run lint
+node .agents/skills/fe-build/scripts/check-structure.mjs frontend/src
 npm --prefix frontend run build
 ```
 
