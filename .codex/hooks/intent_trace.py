@@ -26,6 +26,7 @@ INTENT = "docs/INTENT.md"
 LEDGER = "docs/ledger.jsonl"
 
 AC_ROW = re.compile(r"^\|\s*(AC-\d+\.\d+)\s*\|")      # 표 첫 칸이 AC-n.m인 행만 계약으로 본다
+AC_ID = re.compile(r"AC-\d+\.\d+")
 R_ID = re.compile(r"\bR-\d+\b")
 SOURCE = re.compile(r"docs/task/[^\s|]+?:\d+|\bA-\d+\b")  # 원문 줄 근거 또는 가정
 REQUIRED = {
@@ -119,7 +120,8 @@ def covers(event: dict, ac: str) -> bool:
 
 
 def latest_verify(events, ac: str):
-    hits = [e for e in events if e["type"] == "verify" and covers(e, ac)]
+    """verify는 AC를 직접 가리킨 줄만 인정한다 (R-n 한 줄로 미구현 AC까지 PASS 되지 않게)."""
+    hits = [e for e in events if e["type"] == "verify" and ac in e.get("refs", [])]
     return hits[-1] if hits else None
 
 
@@ -163,6 +165,9 @@ def pre_commit(merge_heads=()) -> list:
     problems += errors
     new_events = [e for e in events if e["_line"] > len(head_ledger.splitlines())]
     for e in new_events:
+        if e["type"] == "verify" and any(not AC_ID.fullmatch(str(r)) for r in e["refs"]):
+            problems.append(f"{CHECK} {LEDGER}:{e['_line']} verify refs는 AC-n.m만 — R-n 대신 확인한 AC를 하나씩 적는다"
+                            f" (예: [\"AC-1.1\"]).")
         if e["type"] == "verify" and e.get("result") in ("PASS", "FAIL") and not RERUN.search(str(e.get("line", ""))):
             problems.append(f"{CHECK} {LEDGER}:{e['_line']} verify line 끝에 재실행 명령이 없음 — "
                             f"'<결과> <기능(R-n)> — <조작·입력> → <관찰 결과> (<재실행 명령 또는 테스트 이름>)'.")
