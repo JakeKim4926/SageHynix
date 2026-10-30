@@ -35,6 +35,6 @@ npm --prefix frontend run build
 
 ## 기록
 
-docs/LOG.md 검증 표에 verify 4단계 형식(시각 | 결과 한 줄 | 구현 위치)으로 기록한다. 결과 한 줄에 Vitest 흐름 테스트(mock)인지 브라우저 확인(실제 API)인지 드러나게 쓴다. 코드 검증, 화면 확인, 업무 수치 검증을 혼동하지 않는다. 앱이 없는 하네스 문서 변경에서는 앱 테스트를 통과했다고 쓰지 않는다.
+docs/ledger.jsonl에 verify 4단계 형식(AC별 verify 줄)으로 기록한다. 결과 한 줄에 Vitest 흐름 테스트(mock)인지 브라우저 확인(실제 API)인지 드러나게 쓴다. 코드 검증, 화면 확인, 업무 수치 검증을 혼동하지 않는다. 앱이 없는 하네스 문서 변경에서는 앱 테스트를 통과했다고 쓰지 않는다.
 
 근거: https://vite.dev/guide/features (TypeScript는 별도 타입 검사 필요).
