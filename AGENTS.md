@@ -45,6 +45,8 @@ $research → [구현 → $verify → 커밋] × N → $doc → 제출
 | FE 화면·입력·조회·상호작용 구현 | `$fe-build` |
 | FE 색·글꼴·화면 골격·차트 색 (SK CI 토큰) | `$fe-design` |
 
+FE Skill 3종은 React/Vite 앱 전용이다. 새 FE는 `$fe-setup` → `$fe-design` 1~2단계 → `$fe-build` 순서로 시작한다. Streamlit 화면에는 쓰지 않는다.
+
 ## 4. 서브에이전트와 지시 형식
 
 - `.codex/agents/`: `researcher`(읽기 전용 조사), `verifier`(독립 검증·문서 감사). 둘 다 코드를 수정하지 않는다.

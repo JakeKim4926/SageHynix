@@ -61,15 +61,4 @@ Tailwind v4 진입 CSS(`src/index.css` 등). 이 토큰에서 `bg-brand`, `text-
 }
 ```
 
-Tailwind를 쓰지 않으면 같은 이름으로 `:root { --color-brand: #EA002C; … }`를 정의하고 `var(--color-brand)`로 참조한다. 차트 라이브러리처럼 JS 값이 필요하면 계열 배열 하나를 한 모듈에 두고 재사용한다.
-
-Streamlit(`.streamlit/config.toml`):
-
-```toml
-[theme]
-primaryColor = "#EA002C"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F6F8"
-textColor = "#191F28"
-font = "sans serif"
-```
+Tailwind를 쓰지 않으면 같은 이름으로 `:root { --color-brand: #EA002C; … }`를 정의하고 `var(--color-brand)`로 참조한다. 차트 라이브러리처럼 JS 값이 필요하면 계열 배열 하나를 한 모듈(예: `lib/chartColors.ts`)에 두고 재사용한다.

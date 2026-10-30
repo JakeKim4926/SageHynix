@@ -103,7 +103,7 @@ useMemo/useCallback·전역 상태·별도 라우터는 기본 설치 항목이 
 
 ## 6. 의미 있는 HTML과 스타일
 
-클릭 동작은 button, 이동은 링크, 입력에는 label을 사용한다. 색상만으로 상태를 전달하지 않는다. 재사용할 색상·간격은 프로젝트 디자인 토큰에 맞춘다. Tailwind 클래스 반복이 커지면 실제 공통 컴포넌트로 묶는다.
+클릭 동작은 button, 이동은 링크, 입력에는 label을 사용한다. 색상만으로 상태를 전달하지 않는다. 재사용할 색상·간격은 프로젝트 디자인 토큰(없으면 [fe-design](../../fe-design/SKILL.md)의 SK 토큰)에 맞춘다. Tailwind 클래스 반복이 커지면 실제 공통 컴포넌트로 묶는다.
 
 ```tsx
 function AnalyzeButton({ busy, onRun }: { busy: boolean; onRun: () => void }) {
